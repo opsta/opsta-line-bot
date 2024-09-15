@@ -8,5 +8,5 @@ services:
       LINE_CHANNEL_ACCESS_TOKEN: CHANGEME
       OPENAI_API_KEY: CHANGEME
       PDF_FILE: https://d18rn0p25nwr6d.cloudfront.net/CIK-0000320187/af34257a-4449-46e1-a2f0-df90d23d6180.pdf
-      TRANSFORMERS_CACHE: /tmp
+      HF_HOME: /tmp
       ANSWER_LANGUAGE: Thai

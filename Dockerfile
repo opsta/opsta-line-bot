@@ -15,4 +15,5 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
 WORKDIR /app
 COPY chat.py healthcheck.py ./
 EXPOSE 5000
-ENTRYPOINT ["python", "-m", "flask", "--app", "chat", "run", "--host=0.0.0.0", "--port=5000"]
+ENTRYPOINT ["python", "-m", "gunicorn", "chat:app", "-b", "0.0.0.0:5000"]
+CMD ["-w", "1"]

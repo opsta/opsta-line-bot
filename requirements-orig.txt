@@ -5,3 +5,6 @@ langchain-openai
 langchain-huggingface
 langchain-chroma
 pypdf
+gunicorn
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch

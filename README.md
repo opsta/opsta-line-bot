@@ -1,5 +1,10 @@
 # Opsta Line Chat Bot
 
+## Prerequisite
+
+* LLM that support standard OpenAI api
+* file `data.pdf` as context
+
 ## Run Opsta Line Chat Bot
 
 ```bash

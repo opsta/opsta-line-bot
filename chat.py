@@ -44,6 +44,7 @@ pdf_file = os.environ.get('PDF_FILE', 'data.pdf')
 answer_language = os.environ.get('ANSWER_LANGUAGE', 'English')
 text_splitter_chunk_size = int(os.environ.get('TEXT_SPLITTER_CHUNK_SIZE', '1000'))
 text_splitter_chunk_overlap = int(os.environ.get('TEXT_SPLITTER_CHUNK_OVERLAP', '200'))
+search_return_documents = int(os.environ.get('SEARCH_RETURN_DOCUMENTS', '5'))
 
 
 retriever = None
@@ -74,7 +75,7 @@ def configure_retriever(pdf_file):
 
   embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
   vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
-  retriever = vectorstore.as_retriever()
+  retriever = vectorstore.as_retriever(search_kwargs={'k': search_return_documents})
 
   return retriever
 

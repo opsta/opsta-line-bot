@@ -1,0 +1,12 @@
+services:
+  opsta-line-bot:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      LINE_CHANNEL_SECRET: CHANGEME
+      LINE_CHANNEL_ACCESS_TOKEN: CHANGEME
+      PDF_FILE: https://d18rn0p25nwr6d.cloudfront.net/CIK-0000320187/af34257a-4449-46e1-a2f0-df90d23d6180.pdf
+      TRANSFORMERS_CACHE: /tmp
+      OPENAI_API_BASE: https://openai.opsta.net/v1
+      ANSWER_LANGUAGE: Thai

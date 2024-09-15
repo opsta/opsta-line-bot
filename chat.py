@@ -37,10 +37,14 @@ configuration = Configuration(access_token=os.environ['LINE_CHANNEL_ACCESS_TOKEN
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 openai_api_base = os.environ.get('OPENAI_API_BASE', 'http://localhost:1234/v1')
 openai_api_key = os.environ.get('OPENAI_API_KEY', '1234')
-openai_temperature = os.environ.get('OPENAI_TEMPERATURE', '0.0')
+openai_temperature = float(os.environ.get('OPENAI_TEMPERATURE', '0.0'))
+openai_max_tokens = int(os.environ.get('OPENAI_MAX_TOKENS', None))
 embedding_model = os.environ.get('EMBEDDING_MODEL', 'sentence-transformers/all-mpnet-base-v2')
 pdf_file = os.environ.get('PDF_FILE', 'data.pdf')
 answer_language = os.environ.get('ANSWER_LANGUAGE', 'English')
+text_splitter_chunk_size = int(os.environ.get('TEXT_SPLITTER_CHUNK_SIZE', '1000'))
+text_splitter_chunk_overlap = int(os.environ.get('TEXT_SPLITTER_CHUNK_OVERLAP', '200'))
+search_return_documents = int(os.environ.get('SEARCH_RETURN_DOCUMENTS', '5'))
 
 
 retriever = None
@@ -66,12 +70,12 @@ def configure_retriever(pdf_file):
   loader = PyPDFLoader(pdf_file)
   docs = loader.load()
 
-  text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=300)
+  text_splitter = RecursiveCharacterTextSplitter(chunk_size=text_splitter_chunk_size, chunk_overlap=text_splitter_chunk_overlap)
   splits = text_splitter.split_documents(docs)
 
   embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
   vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
-  retriever = vectorstore.as_retriever()
+  retriever = vectorstore.as_retriever(search_kwargs={'k': search_return_documents})
 
   return retriever
 
@@ -85,9 +89,10 @@ def handle_message(event):
       # Call OpenAI
       llm = ChatOpenAI( openai_api_base=openai_api_base,
                         openai_api_key=openai_api_key,
-                        temperature=float(openai_temperature),
+                        temperature=openai_temperature,
                         streaming=True,
                         request_timeout=1,
+                        max_tokens=openai_max_tokens,
                       )
 
       # Chain question

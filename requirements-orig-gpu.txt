@@ -1,0 +1,8 @@
+line-bot-sdk
+Flask
+langchain-community
+langchain-openai
+langchain-huggingface
+langchain-chroma
+pypdf
+gunicorn

@@ -21,7 +21,7 @@ export LINE_CHANNEL_SECRET=YOURSECRET
 export OPENAI_API_KEY=YOUROPENAIKEY
 
 # This will run on port 5000
-flask --app chat run
+flask --app chat run --host 0.0.0.0 --port 5000
 ```
 
 ## Run with Docker Compose

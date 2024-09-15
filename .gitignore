@@ -4,6 +4,10 @@
 # Ignore log.txt
 log.txt
 
+# Ignore docker compose dev file
+docker-compose-*.yml
+docker-compose-*.yaml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -37,7 +37,7 @@ system_prompt = (
   "Use the following pieces of retrieved context to answer "
   "the question. If you don't know the answer, say that you "
   "don't know. Use three sentences maximum and keep the "
-  "answer concise."
+  "answer concise. Answer in Thai language."
   "\n\n"
   "{context}"
 )
@@ -54,6 +54,7 @@ handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 openai_api_base = os.environ.get('OPENAI_API_BASE', 'http://localhost:1234/v1')
 openai_api_key = os.environ.get('OPENAI_API_KEY', '1234')
 openai_temperature = os.environ.get('OPENAI_TEMPERATURE', '0.0')
+embedding_model = os.environ.get('EMBEDDING_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
 pdf_file = os.environ.get('PDF_FILE', 'data.pdf')
 
 
@@ -62,10 +63,10 @@ def configure_retriever(pdf_file):
   loader = PyPDFLoader(pdf_file)
   docs = loader.load()
 
-  text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+  text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=300)
   splits = text_splitter.split_documents(docs)
 
-  embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+  embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
   vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
   retriever = vectorstore.as_retriever()
 
@@ -87,7 +88,7 @@ def handle_message(event):
     line_bot_api.reply_message_with_http_info(
       ReplyMessageRequest(
         reply_token=event.reply_token,
-        messages=[TextMessage(text=results["answer"])]
+        messages=[TextMessage(text=results["answer"].strip())]
       )
     )
 

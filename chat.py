@@ -1,6 +1,8 @@
 import os
 from flask import Flask, request, abort
 
+from langchain_openai import OpenAI
+
 from linebot.v3 import (
   WebhookHandler
 )
@@ -23,6 +25,9 @@ app = Flask(__name__)
 
 configuration = Configuration(access_token=os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
+openai_api_base = os.environ.get('OPENAI_API_BASE', 'http://localhost:1234/v1')
+openai_api_key = os.environ.get('OPENAI_API_KEY', '1234')
+openai_temperature = os.environ.get('OPENAI_TEMPERATURE', '0.0')
 
 
 @app.route("/callback", methods=['POST'])
@@ -47,11 +52,19 @@ def callback():
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
   with ApiClient(configuration) as api_client:
+
+    llm = OpenAI( openai_api_base=openai_api_base, 
+                  openai_api_key=openai_api_key, 
+                  temperature=float(openai_temperature),
+                  streaming=True
+          )
+    response = llm.invoke(event.message.text)
+
     line_bot_api = MessagingApi(api_client)
     line_bot_api.reply_message_with_http_info(
       ReplyMessageRequest(
         reply_token=event.reply_token,
-        messages=[TextMessage(text=event.message.text)]
+        messages=[TextMessage(text=response)]
       )
     )
 

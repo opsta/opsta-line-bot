@@ -1,2 +1,4 @@
 line-bot-sdk
 Flask
+langchain-community
+langchain-openai

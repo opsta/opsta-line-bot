@@ -24,6 +24,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set DEPLOY_ENV for production
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "DEPLOY_ENV=prd" >> "$GITHUB_ENV"
+      - name: Set DEPLOY_ENV for non-production
+        if: startsWith(github.ref, 'refs/tags/v') != true
+        run: |
+          if [[ ${{ github.ref_name }} == 'main' || ${{ github.ref_name }} == 'master' ]]; then
+            echo "DEPLOY_ENV=dev" >> "$GITHUB_ENV"
+          else
+            echo "DEPLOY_ENV=${{ github.ref_name }}" >> "$GITHUB_ENV"
+          fi
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -35,7 +46,7 @@ jobs:
             # branch event
             type=ref,event=branch
             # dynamically set the branch name as a prefix
-            type=sha,prefix={{branch}}-,priority=650
+            type=sha,prefix=${{ env.DEPLOY_ENV }}-,priority=650
             # push tag event on valid semver git tag
             type=semver,pattern={{raw}}
     # For use in other jobs
@@ -43,6 +54,7 @@ jobs:
       tags: "${{ steps.meta.outputs.tags }}"
       labels: "${{ steps.meta.outputs.labels }}"
       version: "${{ steps.meta.outputs.version }}"
+      deploy_env: "${{ env.DEPLOY_ENV }}"
 
   # For non-production environments
   build-push:
@@ -103,21 +115,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set DEPLOY_ENV for production
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: echo "DEPLOY_ENV=prd" >> "$GITHUB_ENV"
-      - name: Set DEPLOY_ENV for non-production
-        if: startsWith(github.ref, 'refs/tags/v') != true
-        run: |
-          if [[ ${{ github.ref_name }} == 'main' || ${{ github.ref_name }} == 'master' ]]; then
-            echo "DEPLOY_ENV=dev" >> "$GITHUB_ENV"
-          else
-            echo "DEPLOY_ENV=${{ github.ref_name }}" >> "$GITHUB_ENV"
-          fi
       - name: Update Image Version in Helm Value file
         uses: fjogeleit/yaml-update-action@main
         with:
-          valueFile: "iac/helm-values/opsta-line-bot-${{ env.DEPLOY_ENV }}.yaml"
+          valueFile: "iac/helm-values/opsta-line-bot-${{ needs.setup.outputs.deploy_env }}.yaml"
           propertyPath: image.tag
           value: ${{ needs.setup.outputs.version }}
           branch: main

@@ -21,3 +21,18 @@ vars:
   EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
   OPENAI_MAX_TOKENS: 8000
   SEARCH_RETURN_DOCUMENTS: 15
+podAnnotations:
+  reloader.stakater.com/auto: "true"
+secretName: opsta-line-bot-secrets-dev
+
+# # Sample Kubernetes secret manifest file
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: opsta-line-bot-secrets-dev
+# type: Opaque
+# stringData:
+#   LINE_CHANNEL_SECRET: CHANGEME
+#   LINE_CHANNEL_ACCESS_TOKEN: CHANGEME
+#   PDF_FILE: https://storage.googleapis.com/bucket/file.pdf
+#   OPENAI_API_BASE: https://api.openai.com/v1

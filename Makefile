@@ -14,8 +14,8 @@ run:
 
 deploy:
 	kubectl create namespace demo || true
-	kubectl delete -f iac/argocd/opsta-line-bot-root-app.yaml
-	kubectl apply -f iac/argocd/opsta-line-bot-root-app.yaml
+	kubectl delete -f iac/argocd/ iac/k8s/
+	kubectl apply -f iac/argocd/ iac/k8s/
 
 clean:
 	rm -rf .venv/${VENV}

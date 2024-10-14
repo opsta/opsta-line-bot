@@ -27,9 +27,7 @@ resources:
     memory: "1024Mi"
   limits:
     cpu: "0"
-    memory: "0"
-    # cpu: "2000m"
-    # memory: "2048Mi"
+    memory: "2048Mi"
 podAnnotations:
   reloader.stakater.com/auto: "true"
 secretName: opsta-line-bot-secrets-dev

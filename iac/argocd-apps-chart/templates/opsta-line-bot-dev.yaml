@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opsta-line-bot-dev
+  namespace: demo-opsta-line-bot-dev
+spec:
+  project: demo
+  sources:
+  - repoURL: https://chart.onechart.dev
+    chart: onechart
+    targetRevision: 0.73.0
+    helm:
+      valueFiles:
+      - $values/iac/helm-values/opsta-line-bot-dev.yaml
+  - repoURL: https://github.com/opsta/opsta-line-bot.git
+    targetRevision: dev
+    ref: values
+  destination:
+    name: gke-training
+    namespace: demo-opsta-line-bot-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opsta-line-bot-root-app
+  namespace: demo
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: demo
+  source:
+    repoURL: https://github.com/opsta/opsta-line-bot.git
+    targetRevision: dev
+    path: iac/argocd-apps-chart
+  destination:
+    name: gke-training
+    namespace: demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

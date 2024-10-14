@@ -123,3 +123,18 @@ jobs:
           value: ${{ needs.setup.outputs.version }}
           branch: main
           message: "Update Image Version to ${{ needs.setup.outputs.version }}"
+
+  # ArgoCD Sync
+  gitops-sync:
+    runs-on: quay.io/argoproj/argocd:v2.12.4
+    needs:
+      - setup
+      - gitops-commit
+    steps:
+      - name: Sync ArgoCD
+        run: |
+          argocd app sync demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --project demo
+          argocd app wait demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --health
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

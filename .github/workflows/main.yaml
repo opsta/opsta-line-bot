@@ -45,10 +45,10 @@ jobs:
           tags: |
             # branch event
             type=ref,event=branch
-            # match main to tag dev
-            type=match,pattern=main,value=dev
+            # tag edge on default branch
+            type=edge
             # dynamically set the branch name as a prefix
-            type=sha,prefix=${{ env.DEPLOY_ENV }}-,priority=650
+            type=sha,prefix=${{ env.DEPLOY_ENV }}-,priority=750
             # push tag event on valid semver git tag
             type=semver,pattern={{raw}}
     # For use in other jobs
@@ -105,7 +105,7 @@ jobs:
       - name: Setup Crane
         uses: imjasonh/setup-crane@v0.4
       - name: Copy Docker Image from dev to production
-        run: crane copy ${{ env.IMAGE_NAME }}:dev ${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}
+        run: crane copy ${{ env.IMAGE_NAME }}:edge ${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}
 
   # Commit to Git for ArgoCD
   gitops-commit:

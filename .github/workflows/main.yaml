@@ -67,8 +67,8 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ needs.build.outputs.tags }}
-          labels: ${{ needs.build.outputs.labels }}
+          tags: ${{ needs.setup.outputs.tags }}
+          labels: ${{ needs.setup.outputs.labels }}
 
   # For production environment
   tag-prd:

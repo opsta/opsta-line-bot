@@ -9,7 +9,7 @@ probe:
   path: "/health"
 ingress:
   ingressClassName: nginx
-  host: linebot.opsta.dev
+  host: demo-linebot.opsta.dev
   tlsEnabled: true
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod

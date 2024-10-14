@@ -7,8 +7,8 @@ image:
 probe:
   enabled: true
   path: /health
-  settings:
-    initialDelaySeconds: 30
+  # settings:
+  #   initialDelaySeconds: 30
 ingress:
   ingressClassName: nginx
   host: demo-linebot.opsta.dev

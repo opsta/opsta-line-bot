@@ -45,6 +45,8 @@ jobs:
           tags: |
             # branch event
             type=ref,event=branch
+            # match main to tag dev
+            type=match,pattern=main,value=dev
             # dynamically set the branch name as a prefix
             type=sha,prefix=${{ env.DEPLOY_ENV }}-,priority=650
             # push tag event on valid semver git tag

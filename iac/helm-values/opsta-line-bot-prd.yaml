@@ -11,7 +11,7 @@ probe:
     initialDelaySeconds: 30
 ingress:
   ingressClassName: nginx
-  host: demo-linebot.dev.opsta.dev
+  host: demo-linebot.opsta.dev
   tlsEnabled: true
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -32,7 +32,7 @@ resources:
   ignoreLimits: true
 podAnnotations:
   reloader.stakater.com/auto: 'true'
-secretName: opsta-line-bot-secrets-dev
+secretName: opsta-line-bot-secrets-prd
 volumes:
   - name: hf-hub
     path: /tmp/hub

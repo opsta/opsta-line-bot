@@ -1,8 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: opsta-line-bot-dev
-  namespace: demo-opsta-line-bot-dev
+  name: opsta-line-bot-prd
+  namespace: demo-opsta-line-bot-prd
 spec:
   project: demo
   sources:
@@ -11,13 +11,13 @@ spec:
     targetRevision: 0.73.0
     helm:
       valueFiles:
-      - $values/iac/helm-values/opsta-line-bot-dev.yaml
+      - $values/iac/helm-values/opsta-line-bot-prd.yaml
   - repoURL: https://github.com/opsta/opsta-line-bot.git
     targetRevision: main
     ref: values
   destination:
     name: gke-training
-    namespace: demo-opsta-line-bot-dev
+    namespace: demo-opsta-line-bot-prd
   syncPolicy:
     automated:
       prune: true

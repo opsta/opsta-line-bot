@@ -12,6 +12,11 @@ run:
 	export $(xargs <.env)
 	. .venv/${VENV}/bin/activate && flask --app chat run --host 0.0.0.0 --port 5000
 
+deploy:
+	kubectl create namespace demo || true
+	kubectl delete -f iac/argocd/opsta-line-bot-root-app.yaml
+	kubectl apply -f iac/argocd/opsta-line-bot-root-app.yaml
+
 clean:
 	rm -rf .venv/${VENV}
 	find -iname "*.pyc" -delete

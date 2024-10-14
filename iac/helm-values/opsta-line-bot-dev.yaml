@@ -21,6 +21,15 @@ vars:
   EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
   OPENAI_MAX_TOKENS: 8000
   SEARCH_RETURN_DOCUMENTS: 15
+resources:
+  requests:
+    cpu: "100m"
+    memory: "1024Mi"
+  limits:
+    cpu: "0"
+    memory: "0"
+    # cpu: "2000m"
+    # memory: "2048Mi"
 podAnnotations:
   reloader.stakater.com/auto: "true"
 secretName: opsta-line-bot-secrets-dev
@@ -30,6 +39,7 @@ secretName: opsta-line-bot-secrets-dev
 # kind: Secret
 # metadata:
 #   name: opsta-line-bot-secrets-dev
+#   namespace: demo-opsta-line-bot-dev
 # type: Opaque
 # stringData:
 #   LINE_CHANNEL_SECRET: CHANGEME

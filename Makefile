@@ -14,8 +14,10 @@ run:
 
 deploy:
 	kubectl create namespace demo || true
-	kubectl delete -f iac/argocd/ iac/k8s/
-	kubectl apply -f iac/argocd/ iac/k8s/
+	kubectl delete -f iac/argocd/ || true
+	kubectl delete -f iac/k8s/ || true
+	kubectl apply -f iac/k8s/
+	kubectl apply -f iac/argocd/
 
 clean:
 	rm -rf .venv/${VENV}

@@ -2,11 +2,11 @@ replicas: 1
 containerPort: 5000
 image:
   repository: opsta/opsta-linebot
-  tag: dev
+  tag: dev-4cc2435
   pullPolicy: Always
 probe:
   enabled: true
-  path: "/health"
+  path: /health
 ingress:
   ingressClassName: nginx
   host: demo-linebot.opsta.dev
@@ -23,22 +23,9 @@ vars:
   SEARCH_RETURN_DOCUMENTS: 15
 resources:
   requests:
-    cpu: "100m"
-    memory: "1024Mi"
+    cpu: 100m
+    memory: 1024Mi
   ignoreLimits: true
 podAnnotations:
-  reloader.stakater.com/auto: "true"
+  reloader.stakater.com/auto: 'true'
 secretName: opsta-line-bot-secrets-dev
-
-# # Sample Kubernetes secret manifest file
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: opsta-line-bot-secrets-dev
-#   namespace: demo-opsta-line-bot-dev
-# type: Opaque
-# stringData:
-#   LINE_CHANNEL_SECRET: CHANGEME
-#   LINE_CHANNEL_ACCESS_TOKEN: CHANGEME
-#   PDF_FILE: https://storage.googleapis.com/bucket/file.pdf
-#   OPENAI_API_BASE: https://api.openai.com/v1

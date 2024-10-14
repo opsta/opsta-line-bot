@@ -1,0 +1,23 @@
+replicas: 1
+containerPort: 5000
+image:
+  repository: opsta/opsta-linebot
+  tag: dev
+  pullPolicy: Always
+probe:
+  enabled: true
+  path: "/health"
+ingress:
+  ingressClassName: nginx
+  host: linebot.opsta.dev
+  tlsEnabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+vars:
+  HF_HOME: /tmp
+  ANSWER_LANGUAGE: Thai
+  TEXT_SPLITTER_CHUNK_SIZE: 1000
+  TEXT_SPLITTER_CHUNK_OVERLAP: 200
+  EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+  OPENAI_MAX_TOKENS: 8000
+  SEARCH_RETURN_DOCUMENTS: 15

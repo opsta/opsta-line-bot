@@ -127,6 +127,8 @@ jobs:
   # ArgoCD Sync
   gitops-sync:
     runs-on: quay.io/argoproj/argocd:v2.12.4
+    # run after all of needs are complete (whether skipped or success)
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - setup
       - gitops-commit

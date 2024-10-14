@@ -57,8 +57,8 @@ jobs:
       - name: Update Image Version in Helm Value file
         uses: fjogeleit/yaml-update-action@main
         with:
-          valueFile: "iac/helm-values/opsta-line-bot-${{ env.GITHUB_BASE_REF }}.yaml"
+          valueFile: "iac/helm-values/opsta-line-bot-${GITHUB_REF##*/}.yaml"
           propertyPath: image.tag
           value: ${{ steps.meta.outputs.version }}
-          branch: ${{ env.GITHUB_BASE_REF }}
+          branch: ${GITHUB_REF##*/}
           message: "Update Image Version to ${{ steps.image.outputs.version }}"

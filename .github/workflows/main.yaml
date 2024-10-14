@@ -33,7 +33,7 @@ jobs:
             # branch event
             type=ref,event=branch
             # dynamically set the branch name as a prefix
-            type=sha,prefix={{branch}}-,priority=2000
+            type=sha,prefix={{branch}}-,priority=650
             # push tag event on valid semver git tag
             type=semver,pattern={{raw}}
     # For use in other jobs
@@ -92,7 +92,7 @@ jobs:
   gitops-commit:
     runs-on: ubuntu-latest
     # run after all of needs are complete (whether skipped or success)
-    if: ${{ !cancelled() && !failure() }}
+    if: ${{ success() || skipped() }}
     needs:
       - setup
       - build-push

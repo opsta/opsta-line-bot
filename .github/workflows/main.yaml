@@ -1,7 +1,7 @@
 name: CI/CD for Opsta Line BOT
 
 env:
-  IMAGE_NAME: opsta/opsta-linebot
+  IMAGE_NAME: ghcr.io/opsta/opsta-linebot
 
 on:
   push:

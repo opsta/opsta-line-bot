@@ -1,7 +1,7 @@
 replicas: 1
 containerPort: 5000
 image:
-  repository: opsta/opsta-linebot
+  repository: ghcr.io/opsta/opsta-linebot
   tag: v1.0.2
   pullPolicy: Always
 probe:

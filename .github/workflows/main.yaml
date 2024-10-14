@@ -17,7 +17,7 @@ on:
       - "main"
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -57,8 +57,8 @@ jobs:
       - name: Update Image Version in Helm Value file
         uses: fjogeleit/yaml-update-action@main
         with:
-          valueFile: "iac/helm-values/opsta-line-bot-${GITHUB_REF##*/}.yaml"
+          valueFile: "iac/helm-values/opsta-line-bot-${{ github.ref_name }}.yaml"
           propertyPath: image.tag
           value: ${{ steps.meta.outputs.version }}
-          branch: ${GITHUB_REF##*/}
+          branch: ${{ github.ref_name }}
           message: "Update Image Version to ${{ steps.image.outputs.version }}"

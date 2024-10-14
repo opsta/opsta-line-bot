@@ -15,5 +15,5 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
 WORKDIR /app
 COPY chat.py healthcheck.py ./
 EXPOSE 5000
-ENTRYPOINT ["python", "-m", "gunicorn", "chat:app", "-b", "0.0.0.0:5000"]
+ENTRYPOINT ["python", "-m", "gunicorn", "chat:app", "-b", "0.0.0.0:5000", "--access-logfile", "-", "--error-logfile", "-"]
 CMD ["-w", "1"]

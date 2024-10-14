@@ -8,7 +8,7 @@ probe:
   enabled: true
   path: /health
   settings:
-    initialDelaySeconds: 10
+    initialDelaySeconds: 15
 ingress:
   ingressClassName: nginx
   host: demo-linebot.opsta.dev

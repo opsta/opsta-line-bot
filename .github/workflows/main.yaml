@@ -92,7 +92,7 @@ jobs:
   gitops-commit:
     runs-on: ubuntu-latest
     # run after all of needs are complete (whether skipped or success)
-    if: ${{ success() || skipped() }}
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - setup
       - build-push

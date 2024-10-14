@@ -25,9 +25,7 @@ resources:
   requests:
     cpu: "100m"
     memory: "1024Mi"
-  limits:
-    cpu: null
-    memory: null
+  ignoreLimits: true
 podAnnotations:
   reloader.stakater.com/auto: "true"
 secretName: opsta-line-bot-secrets-dev

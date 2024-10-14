@@ -126,7 +126,12 @@ jobs:
 
   # ArgoCD Sync
   gitops-sync:
-    runs-on: quay.io/argoproj/argocd:v2.12.4
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/argoproj/argocd:v2.12.4
+      env:
+        ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+        ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
     # run after all of needs are complete (whether skipped or success)
     if: ${{ !cancelled() && !failure() }}
     needs:
@@ -137,6 +142,3 @@ jobs:
         run: |
           argocd app sync demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --project demo
           argocd app wait demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --health
-        env:
-          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

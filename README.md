@@ -32,3 +32,19 @@ flask --app chat run --host 0.0.0.0 --port 5000
 ```bash
 docker compose up
 ```
+
+## Sample Kubernetes secret manifest file
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: opsta-line-bot-secrets-dev
+  namespace: demo-opsta-line-bot-dev
+type: Opaque
+stringData:
+  LINE_CHANNEL_SECRET: CHANGEME
+  LINE_CHANNEL_ACCESS_TOKEN: CHANGEME
+  PDF_FILE: https://storage.googleapis.com/bucket/file.pdf
+  OPENAI_API_BASE: https://api.openai.com/v1
+```

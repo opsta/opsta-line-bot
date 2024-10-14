@@ -1,0 +1,40 @@
+replicas: 1
+containerPort: 5000
+image:
+  repository: opsta/opsta-linebot
+  tag: dev-f6fbec8
+  pullPolicy: Always
+probe:
+  enabled: true
+  path: /health
+  settings:
+    initialDelaySeconds: 30
+ingress:
+  ingressClassName: nginx
+  host: demo-linebot.opsta.dev
+  tlsEnabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+vars:
+  HF_HOME: /tmp
+  HF_HUB_OFFLINE: 1
+  HF_DATASETS_OFFLINE: 1
+  ANSWER_LANGUAGE: Thai
+  TEXT_SPLITTER_CHUNK_SIZE: 1000
+  TEXT_SPLITTER_CHUNK_OVERLAP: 200
+  EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+  OPENAI_MAX_TOKENS: 8000
+  SEARCH_RETURN_DOCUMENTS: 15
+resources:
+  requests:
+    cpu: 100m
+    memory: 1024Mi
+  ignoreLimits: true
+podAnnotations:
+  reloader.stakater.com/auto: 'true'
+secretName: opsta-line-bot-secrets-prd
+volumes:
+  - name: hf-hub
+    path: /tmp/hub
+    size: 500Mi
+    storageClass: nfs

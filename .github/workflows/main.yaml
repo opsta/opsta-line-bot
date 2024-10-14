@@ -1,4 +1,7 @@
-name: ci
+name: CI/CD for Opsta Line BOT
+
+env:
+  IMAGE_NAME: opsta/opsta-linebot
 
 on:
   push:
@@ -26,8 +29,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
-          images: |
-            opsta/opsta-linebot
+          images: ${{ env.IMAGE_NAME }}
           # generate Docker tags based on the following events/attributes
           tags: |
             # branch event
@@ -41,12 +43,12 @@ jobs:
       tags: "${{ steps.meta.outputs.tags }}"
       labels: "${{ steps.meta.outputs.labels }}"
       version: "${{ steps.meta.outputs.version }}"
-      deploy_env: "${{ steps.meta.outputs.version == 'main' && 'dev' || 'prd' }}"
+      deploy_env: "${{ startsWith(github.ref, 'refs/tags/v') && 'prd' || github.ref_name }}"
 
   # For non-production environments
   build-push:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') != true
+    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -69,11 +71,13 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ needs.setup.outputs.tags }}
           labels: ${{ needs.setup.outputs.labels }}
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
 
   # For production environment
   tag-prd:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - setup
     steps:
@@ -86,7 +90,7 @@ jobs:
       - name: Setup Crane
         uses: imjasonh/setup-crane@v0.4
       - name: Copy Docker Image from dev to production
-        run: crane copy opsta/opsta-linebot:dev opsta/opsta-linebot:${{ needs.setup.outputs.version }}
+        run: crane copy ${{ env.IMAGE_NAME }}:dev ${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}
 
   # Commit to Git for ArgoCD
   gitops-commit:

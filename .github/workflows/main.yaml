@@ -121,7 +121,7 @@ jobs:
           path: sonar-report.html
           retention-days: 1
 
-  trivy-sca:
+  trivy-sca-report:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
@@ -143,12 +143,15 @@ jobs:
           name: trivy-sca-report
           path: trivy-sca-report.json
           retention-days: 1
+
   trivy-sca-fail-gate:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Trivy SCA Vulnerability Fail Gate
         uses: aquasecurity/trivy-action@0.28.0
         with:
@@ -159,7 +162,7 @@ jobs:
           format: table
           exit-code: 1
 
-  trivy-iac:
+  trivy-iac-report:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
@@ -188,12 +191,22 @@ jobs:
           name: trivy-iac-report
           path: trivy-iac-report.json
           retention-days: 1
+
   trivy-iac-fail-gate:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Generate Kubernetes Manifest files with Helm Template
+        run: |
+          helm template -f iac/helm-values/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}.yaml \
+            ${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
+            > iac/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}-manifest.yaml
       - name: Trivy IaC Vulnerability Fail Gate
         uses: aquasecurity/trivy-action@0.28.0
         with:
@@ -234,7 +247,7 @@ jobs:
         env:
           DOCKER_BUILD_RECORD_UPLOAD: false
 
-  trivy-image:
+  trivy-image-report:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
@@ -257,6 +270,7 @@ jobs:
           name: trivy-image-report
           path: trivy-image-report.json
           retention-days: 1
+
   trivy-image-fail-gate:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true

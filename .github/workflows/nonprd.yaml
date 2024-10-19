@@ -1,4 +1,4 @@
-name: Deploy to non-production
+name: 1. Non-production deployment
 
 env:
   IMAGE_NAME: ghcr.io/opsta/opsta-linebot

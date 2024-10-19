@@ -1,4 +1,4 @@
-name: Deploy to production
+name: 3. Production deployment
 
 env:
   IMAGE_REGISTRY: ghcr.io
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check if container image tag exists
-        uses: tyriis/docker-image-tag-exists@v2
+        uses: tyriis/docker-image-tag-exists@v2.1.0
         id: check-tag
         with:
           registry: ${{ env.IMAGE_REGISTRY }}

@@ -360,6 +360,14 @@ jobs:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
           artifact_name: zap-baseline-scan
+          cmd_options: "-x zap-baseline-report.xml"
+      - name: Upload ZAP Baseline Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: zap-baseline-report.xml
+          retention-days: 1
 
   zap-api:
     runs-on: ubuntu-latest
@@ -374,6 +382,14 @@ jobs:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
           artifact_name: zap-api-scan
+          cmd_options: "-x zap-api-report.xml"
+      - name: Upload ZAP API Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-report
+          path: zap-api-report.xml
+          retention-days: 1
 
   zap-full:
     runs-on: ubuntu-latest
@@ -388,6 +404,14 @@ jobs:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
           artifact_name: zap-full-scan
+          cmd_options: "-x zap-full-report.xml"
+      - name: Upload ZAP Full Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-full-report
+          path: zap-full-report.xml
+          retention-days: 1
 
   defectdojo-import:
     runs-on: ubuntu-latest
@@ -398,6 +422,9 @@ jobs:
       - trivy-sca-report
       - trivy-iac-report
       - trivy-image-report
+      - zap-baseline
+      - zap-api
+      - zap-full
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v4
@@ -430,15 +457,15 @@ jobs:
           - defectdojo_report_file: trivy-image-report.json
             defectdojo_scan_type: Trivy Scan
             defectdojo_test_title: Trivy Image Scan
-          # - defectdojo_report_file: zap-baseline-report.xml
-          #   defectdojo_scan_type: ZAP Scan
-          #   defectdojo_test_title: ZAP Scan Baseline
-          # - defectdojo_report_file: zap-api-report.xml
-          #   defectdojo_scan_type: ZAP Scan
-          #   defectdojo_test_title: ZAP Scan API
-          # - defectdojo_report_file: zap-full-report.xml
-          #   defectdojo_scan_type: ZAP Scan
-          #   defectdojo_test_title: ZAP Scan Full
+          - defectdojo_report_file: zap-baseline-report.xml
+            defectdojo_scan_type: ZAP Scan
+            defectdojo_test_title: ZAP Scan Baseline
+          - defectdojo_report_file: zap-api-report.xml
+            defectdojo_scan_type: ZAP Scan
+            defectdojo_test_title: ZAP Scan API
+          - defectdojo_report_file: zap-full-report.xml
+            defectdojo_scan_type: ZAP Scan
+            defectdojo_test_title: ZAP Scan Full
 
   defectdojo-findings:
     runs-on: ubuntu-latest

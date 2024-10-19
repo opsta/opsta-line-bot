@@ -69,74 +69,74 @@ jobs:
       version: "${{ steps.meta.outputs.version }}"
       deploy_env: "${{ env.DEPLOY_ENV }}"
 
-  defectdojo-engagement:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
-    needs:
-      - setup
-    steps:
-      - name: Create DefectDojo Product if not exists with Engagement
-        run: |
-          # Timestamp variables
-          TODAY=$(date +%Y-%m-%d)
-          ENDDAY=$(date -d "+1 days" +%Y-%m-%d)
-          echo "TODAY: ${TODAY}"
-          echo "ENDDAY: ${ENDDAY}"
+  # defectdojo-engagement:
+  #   runs-on: ubuntu-latest
+  #   if: startsWith(github.ref, 'refs/tags/v') != true
+  #   needs:
+  #     - setup
+  #   steps:
+  #     - name: Create DefectDojo Product if not exists with Engagement
+  #       run: |
+  #         # Timestamp variables
+  #         TODAY=$(date +%Y-%m-%d)
+  #         ENDDAY=$(date -d "+1 days" +%Y-%m-%d)
+  #         echo "TODAY: ${TODAY}"
+  #         echo "ENDDAY: ${ENDDAY}"
 
-          # Get DefectDojo Product ID
-          DEFECTDOJO_PRODUCT_ID=$(curl -X GET "${{ secrets.DEFECTDOJO_HOST }}/api/v2/products/?name_exact=${{ github.event.repository.name }}" \
-            --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
-            --header "Accept:application/json" --fail-with-body | jq -r '.results[0].id // empty')
-          echo "DEFECTDOJO_PRODUCT_ID: ${DEFECTDOJO_PRODUCT_ID}"
+  #         # Get DefectDojo Product ID
+  #         DEFECTDOJO_PRODUCT_ID=$(curl -X GET "${{ secrets.DEFECTDOJO_HOST }}/api/v2/products/?name_exact=${{ github.event.repository.name }}" \
+  #           --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
+  #           --header "Accept:application/json" --fail-with-body | jq -r '.results[0].id // empty')
+  #         echo "DEFECTDOJO_PRODUCT_ID: ${DEFECTDOJO_PRODUCT_ID}"
 
-          # Create DefectDojo Product if not exists
-          if [[ -z "${DEFECTDOJO_PRODUCT_ID}" ]]; then
-            # Set DefectDojo Payload for Product
-            PAYLOAD=$(cat << JSON
-            {
-              "tags": ["github-actions"],
-              "name": "${{ github.event.repository.name }}",
-              "description": "${{ github.event.repository.name }}",
-              "prod_type": 1,
-              "sla_configuration": 1
-            }
-            JSON
-            )
-            echo "PAYLOAD_PRODUCT: ${PAYLOAD}"
+  #         # Create DefectDojo Product if not exists
+  #         if [[ -z "${DEFECTDOJO_PRODUCT_ID}" ]]; then
+  #           # Set DefectDojo Payload for Product
+  #           PAYLOAD=$(cat << JSON
+  #           {
+  #             "tags": ["github-actions"],
+  #             "name": "${{ github.event.repository.name }}",
+  #             "description": "${{ github.event.repository.name }}",
+  #             "prod_type": 1,
+  #             "sla_configuration": 1
+  #           }
+  #           JSON
+  #           )
+  #           echo "PAYLOAD_PRODUCT: ${PAYLOAD}"
 
-            # Create DefectDojo Product and get Product ID
-            DEFECTDOJO_PRODUCT_ID=$(curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/products/" \
-              --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
-              --header "Content-Type:application/json" \
-              --data-raw "${PAYLOAD}" --fail-with-body | jq -r '.id')
-            echo "DEFECTDOJO_PRODUCT_ID: ${DEFECTDOJO_PRODUCT_ID}"
-          fi
+  #           # Create DefectDojo Product and get Product ID
+  #           DEFECTDOJO_PRODUCT_ID=$(curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/products/" \
+  #             --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
+  #             --header "Content-Type:application/json" \
+  #             --data-raw "${PAYLOAD}" --fail-with-body | jq -r '.id')
+  #           echo "DEFECTDOJO_PRODUCT_ID: ${DEFECTDOJO_PRODUCT_ID}"
+  #         fi
 
-          # Set DefectDojo Payload for Engagement
-          PAYLOAD=$(cat << JSON
-          {
-            "tags": ["github-actions"],
-            "name": "${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}",
-            "first_contacted": "${TODAY}",
-            "target_start": "${TODAY}",
-            "target_end": "${ENDDAY}",
-            "version": "${{ needs.setup.outputs.version }}",
-            "engagement_type": "CI/CD",
-            "build_id": "${{ github.run_id }}",
-            "commit_hash": "${{ github.sha }}",
-            "branch_tag": "${{ github.ref_name }}",
-            "product": "${DEFECTDOJO_PRODUCT_ID}",
-            "source_code_management_uri": "${{ github.repositoryUrl }}"
-          }
-          JSON
-          )
-          echo "PAYLOAD_ENGAGEMENT: ${PAYLOAD}"
+  #         # Set DefectDojo Payload for Engagement
+  #         PAYLOAD=$(cat << JSON
+  #         {
+  #           "tags": ["github-actions"],
+  #           "name": "${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}",
+  #           "first_contacted": "${TODAY}",
+  #           "target_start": "${TODAY}",
+  #           "target_end": "${ENDDAY}",
+  #           "version": "${{ needs.setup.outputs.version }}",
+  #           "engagement_type": "CI/CD",
+  #           "build_id": "${{ github.run_id }}",
+  #           "commit_hash": "${{ github.sha }}",
+  #           "branch_tag": "${{ github.ref_name }}",
+  #           "product": "${DEFECTDOJO_PRODUCT_ID}",
+  #           "source_code_management_uri": "${{ github.repositoryUrl }}"
+  #         }
+  #         JSON
+  #         )
+  #         echo "PAYLOAD_ENGAGEMENT: ${PAYLOAD}"
 
-          # Create DefectDojo Engagement
-          curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/engagements/" \
-            --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
-            --header "Content-Type:application/json" \
-            --data-raw "${PAYLOAD}" --fail-with-body | jq -e -r '.id'
+  #         # Create DefectDojo Engagement
+  #         curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/engagements/" \
+  #           --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
+  #           --header "Content-Type:application/json" \
+  #           --data-raw "${PAYLOAD}" --fail-with-body | jq -e -r '.id'
 
   sonarqube:
     runs-on: ubuntu-latest
@@ -285,14 +285,14 @@ jobs:
     if: always() && startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
-      - defectdojo-engagement
+      # - defectdojo-engagement
       - sonarqube
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - name: Create DefectDojo Product if not exists with Engagement
+      - name: Import Security Test Report to DefectDojo
         run: |
           # Timestamp variables
           TODAY=$(date +%Y-%m-%d)
@@ -303,6 +303,7 @@ jobs:
             --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
             --form scan_date="${TODAY}" \
             --form product_name="${{ github.event.repository.name }}" \
+            --form product_type_name="Research and Development" \
             --form engagement_name="${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}" \
             --form environment="${{ needs.setup.outputs.deploy_env }}" \
             --form close_old_findings="true" \

@@ -313,6 +313,7 @@ jobs:
           allow_issue_writing: false
           artifact_name: zap-baseline-scan
           cmd_options: "-x zap-baseline-report.xml"
+          fail_action: true
       - name: Upload ZAP Baseline Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -335,6 +336,7 @@ jobs:
           allow_issue_writing: false
           artifact_name: zap-api-scan
           cmd_options: "-x zap-api-report.xml"
+          fail_action: true
       - name: Upload ZAP API Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -357,6 +359,7 @@ jobs:
           allow_issue_writing: false
           artifact_name: zap-full-scan
           cmd_options: "-x zap-full-report.xml"
+          fail_action: true
       - name: Upload ZAP Full Report
         if: always()
         uses: actions/upload-artifact@v4

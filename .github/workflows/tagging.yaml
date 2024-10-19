@@ -42,6 +42,7 @@ jobs:
 
   tag-prd:
     runs-on: ubuntu-latest
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - defectdojo-security-gate
     steps:

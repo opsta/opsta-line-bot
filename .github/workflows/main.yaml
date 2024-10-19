@@ -296,8 +296,11 @@ jobs:
         run: |
           # Timestamp variables
           TODAY=$(date +%Y-%m-%d)
+          echo "TODAY: ${TODAY}"
 
           # Import DefectDojo from Report
+          pwd
+          ls -la
           curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/import-scan/" --fail-with-body \
             --header "Content-Type:multipart/form-data" \
             --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \

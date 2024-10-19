@@ -312,7 +312,7 @@ jobs:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
           artifact_name: zap-baseline-scan
-          cmd_options: "-x zap-baseline-report.xml"
+          cmd_options: "-I -x zap-baseline-report.xml"
           fail_action: true
       - name: Upload ZAP Baseline Report
         if: always()
@@ -335,7 +335,7 @@ jobs:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
           artifact_name: zap-api-scan
-          cmd_options: "-x zap-api-report.xml"
+          cmd_options: "-I -x zap-api-report.xml"
           fail_action: true
       - name: Upload ZAP API Report
         if: always()
@@ -358,7 +358,7 @@ jobs:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
           artifact_name: zap-full-scan
-          cmd_options: "-x zap-full-report.xml"
+          cmd_options: "-I -x zap-full-report.xml"
           fail_action: true
       - name: Upload ZAP Full Report
         if: always()

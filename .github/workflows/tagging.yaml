@@ -1,4 +1,4 @@
-name: Tagging Production Image for Opsta Line BOT
+name: Tagging production image
 
 env:
   IMAGE_NAME: ghcr.io/opsta/opsta-linebot

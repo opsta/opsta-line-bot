@@ -1,4 +1,4 @@
-name: CI/CD for Opsta Line BOT Production Environment
+name: Deploy to production
 
 env:
   IMAGE_REGISTRY: ghcr.io

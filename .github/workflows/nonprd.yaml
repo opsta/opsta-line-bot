@@ -1,4 +1,4 @@
-name: CI/CD for Opsta Line BOT Non-Production Environments
+name: Deploy to non-production
 
 env:
   IMAGE_NAME: ghcr.io/opsta/opsta-linebot

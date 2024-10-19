@@ -288,12 +288,32 @@ jobs:
           format: table
           exit-code: 1
 
+  defectdojo-prd-security-gate:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: DefectDojo Security Gate Thresholds
+        uses: portswigger-cloud/defectdojo-findings-thresholds@v1
+        with:
+          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
+          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
+          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
+          defectdojo-product: ${{ github.event.repository.name }}
+          # Need to put every thresholds to make it working
+          total-threshold: 1000000
+          critical-threshold: 0
+          high-threshold: 0
+          medium-threshold: 1000000
+          low-threshold: 1000000
+          info-threshold: 1000000
+
   # For production environment
   tag-prd:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - setup
+      - defectdojo-prd-security-gate
     steps:
       - name: Login to Docker Hub
         if: github.event_name != 'pull_request'
@@ -481,7 +501,7 @@ jobs:
           defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
           defectdojo-product: ${{ github.event.repository.name }}
 
-  defectdojo-security-gate:
+  defectdojo-dev-security-gate:
     runs-on: ubuntu-latest
     if: always() && startsWith(github.ref, 'refs/tags/v') != true
     needs:

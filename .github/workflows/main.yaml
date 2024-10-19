@@ -80,11 +80,14 @@ jobs:
           # Timestamp variables
           TODAY=$(date +%Y-%m-%d)
           ENDDAY=$(date -d "+1 days" +%Y-%m-%d)
+          echo "TODAY: ${TODAY}"
+          echo "ENDDAY: ${ENDDAY}"
 
           # Get DefectDojo Product ID
           DEFECTDOJO_PRODUCT_ID=$(curl -X GET "${{ secrets.DEFECTDOJO_HOST }}/api/v2/products/?name_exact=${{ github.event.repository.name }}" \
             --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
             --header "Accept:application/json" --fail-with-body | jq -r '.results[0].id // empty')
+          echo "DEFECTDOJO_PRODUCT_ID: ${DEFECTDOJO_PRODUCT_ID}"
 
           # Create DefectDojo Product if not exists
           if [[ -z "${DEFECTDOJO_PRODUCT_ID}" ]]; then
@@ -99,11 +102,14 @@ jobs:
             }
             JSON
             )
+            echo "PAYLOAD_PRODUCT: ${PAYLOAD}"
+
             # Create DefectDojo Product and get Product ID
             DEFECTDOJO_PRODUCT_ID=$(curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/products/" \
               --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
               --header "Content-Type:application/json" \
               --data-raw "${PAYLOAD}" --fail-with-body | jq -r '.id')
+            echo "DEFECTDOJO_PRODUCT_ID: ${DEFECTDOJO_PRODUCT_ID}"
           fi
 
           # Set DefectDojo Payload for Engagement
@@ -124,6 +130,8 @@ jobs:
           }
           JSON
           )
+          echo "PAYLOAD_ENGAGEMENT: ${PAYLOAD}"
+
           # Create DefectDojo Engagement
           curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/engagements/" \
             --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
@@ -210,6 +218,8 @@ jobs:
           labels: ${{ needs.setup.outputs.labels }}
           cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
           cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
 
   # For production environment
   tag-prd:

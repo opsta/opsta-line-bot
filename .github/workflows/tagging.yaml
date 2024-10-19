@@ -46,6 +46,10 @@ jobs:
     needs:
       - defectdojo-security-gate
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Get next semver version
         id: semver
         uses: anothrNick/github-tag-action@v1

@@ -7,10 +7,15 @@ env:
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Put version to deploy to production'
+      use-latest:
+        type: boolean
         required: true
+        default: false
+        description: Automatically pick the latest tag version
+      version:
         type: string
+        required: false
+        description: 'Put version to deploy to production'
 
 jobs:
   # Commit to Git for ArgoCD
@@ -19,26 +24,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Get latest tag version
+        if: ${{ inputs.use-latest }}
+        id: semver
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          DRY_RUN: true
+          DEFAULT_BUMP: none
+      - name: Set tag version
+        run: echo "DEPLOY_VERSION=${{ inputs.use-latest && steps.semver.outputs.tag || inputs.version }}" >> "$GITHUB_ENV"
       - name: Check if container image tag exists
         uses: tyriis/docker-image-tag-exists@v2.1.0
         id: check-tag
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           repository: ${{ env.IMAGE_NAME }}
-          tag: ${{ inputs.version }}
+          tag: ${{ env.DEPLOY_VERSION }}
       - name: Fail if container image tag not exists
         if: steps.check-tag.outputs.tag == 'not found'
         run: |
-          echo "::error title=Container image tag not found::Container image tag ${{ inputs.version }} does not exist"
+          echo "::error title=Container image tag not found::Container image tag ${{ env.DEPLOY_VERSION }} does not exist"
           exit 1
       - name: Update Image Version in Helm Value file
         uses: fjogeleit/yaml-update-action@main
         with:
           valueFile: "iac/helm-values/opsta-line-bot-prd.yaml"
           propertyPath: image.tag
-          value: ${{ inputs.version }}
+          value: ${{ env.DEPLOY_VERSION }}
           branch: main
-          message: "Update Image Version to ${{ inputs.version }}"
+          message: "Update Image Version to ${{ env.DEPLOY_VERSION }}"
 
   # ArgoCD Sync
   gitops-sync:

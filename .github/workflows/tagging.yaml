@@ -7,16 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: Choose how you are going to bump version
-        required: true
         type: choice
+        required: true
         default: patch
         options:
           - patch
           - minor
           - major
+        description: Choose how you are going to bump version
       skip-security-gate:
         type: boolean
+        required: true
         default: false
         description: Skip security gate check
 

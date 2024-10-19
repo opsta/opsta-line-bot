@@ -1,7 +1,7 @@
 # Secrets Variables
 ## ARGOCD_AUTH_TOKEN
 ## ARGOCD_SERVER
-## DEFECTDOJO_HOST
+## DEFECTDOJO_HOST (MUST PUT SLASH AT THE END)
 ## DEFECTDOJO_USERNAME
 ## DEFECTDOJO_PASSWORD
 ## DOCKERHUB_TOKEN
@@ -121,6 +121,79 @@ jobs:
           path: sonar-report.html
           retention-days: 1
 
+  trivy-sca:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate Trivy SCA Vulnerability Report
+        uses: aquasecurity/trivy-action@v0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'vuln,license'
+          format: json
+          output: trivy-sca-report.json
+      - name: Upload Trivy SCA Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sca-report
+          path: trivy-sca-report.json
+          retention-days: 1
+      - name: Trivy SCA Vulnerability Fail Gate
+        uses: aquasecurity/trivy-action@v0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'vuln,license'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          format: table
+          exit-code: 1
+          skip-setup-trivy: true
+
+  trivy-iac:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Generate Kubernetes Manifest files with Helm Template
+        run: |
+          helm template -f iac/helm-values/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}.yaml \
+            ${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
+            > iac/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}-manifest.yaml
+      - name: Generate Trivy IaC Vulnerability Report
+        uses: aquasecurity/trivy-action@v0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'misconfig,secret'
+          format: json
+          output: trivy-iac-report.json
+      - name: Upload Trivy IaC Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-iac-report
+          path: trivy-iac-report.json
+          retention-days: 1
+      - name: Trivy IaC Vulnerability Fail Gate
+        uses: aquasecurity/trivy-action@v0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'misconfig,secret'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          format: table
+          exit-code: 1
+          skip-setup-trivy: true
+
   # For non-production environments
   build-push:
     runs-on: ubuntu-latest
@@ -150,6 +223,39 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
         env:
           DOCKER_BUILD_RECORD_UPLOAD: false
+
+  trivy-image:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - setup
+      - build-push
+    steps:
+      - name: Generate Trivy Image Vulnerability Report
+        uses: aquasecurity/trivy-action@v0
+        with:
+          image-ref: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}"
+          scanners: 'vuln,misconfig,secret'
+          format: json
+          output: trivy-image-report.json
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Trivy Image Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy-image-report.json
+          retention-days: 1
+      - name: Trivy Image Vulnerability Fail Gate
+        uses: aquasecurity/trivy-action@v0
+        with:
+          image-ref: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}"
+          scanners: 'vuln,misconfig,secret'
+          severity: 'HIGH,CRITICAL'
+          format: table
+          exit-code: 1
+          skip-setup-trivy: true
 
   # For production environment
   tag-prd:
@@ -216,6 +322,9 @@ jobs:
     needs:
       - setup
       - sonarqube
+      - trivy-sca
+      - trivy-iac
+      - trivy-image
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v4
@@ -239,15 +348,15 @@ jobs:
           - defectdojo_report_file: sonar-report.html
             defectdojo_scan_type: SonarQube Scan
             defectdojo_test_title: SonarQube Scan
-          # - defectdojo_report_file: trivy-sca-report.json
-          #   defectdojo_scan_type: Trivy Scan
-          #   defectdojo_test_title: Trivy SCA Scan
-          # - defectdojo_report_file: trivy-iac-report.json
-          #   defectdojo_scan_type: Trivy Scan
-          #   defectdojo_test_title: Trivy IaC Scan
-          # - defectdojo_report_file: trivy-image-report.json
-          #   defectdojo_scan_type: Trivy Scan
-          #   defectdojo_test_title: Trivy Image Scan
+          - defectdojo_report_file: trivy-sca-report.json
+            defectdojo_scan_type: Trivy Scan
+            defectdojo_test_title: Trivy SCA Scan
+          - defectdojo_report_file: trivy-iac-report.json
+            defectdojo_scan_type: Trivy Scan
+            defectdojo_test_title: Trivy IaC Scan
+          - defectdojo_report_file: trivy-image-report.json
+            defectdojo_scan_type: Trivy Scan
+            defectdojo_test_title: Trivy Image Scan
           # - defectdojo_report_file: zap-baseline-report.xml
           #   defectdojo_scan_type: ZAP Scan
           #   defectdojo_test_title: ZAP Scan Baseline
@@ -258,6 +367,20 @@ jobs:
           #   defectdojo_scan_type: ZAP Scan
           #   defectdojo_test_title: ZAP Scan Full
 
+  defectdojo-findings:
+    runs-on: ubuntu-latest
+    if: always() && startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - defectdojo-import
+    steps:
+      - name: DefectDojo Query Findings
+        uses: portswigger-cloud/defectdojo-active-findings@v1
+        with:
+          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
+          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
+          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
+          defectdojo-product: ${{ github.event.repository.name }}
+
   defectdojo-security-gate:
     runs-on: ubuntu-latest
     if: always() && startsWith(github.ref, 'refs/tags/v') != true
@@ -265,11 +388,11 @@ jobs:
       - defectdojo-import
     steps:
       - name: DefectDojo Security Gate Thresholds
-        uses: portswigger-cloud/defectdojo-active-findings@v1
+        uses: portswigger-cloud/defectdojo-findings-thresholds@v1
         with:
           defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
           defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
           defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
           defectdojo-product: ${{ github.event.repository.name }}
-          critical-threshold: 1
-          high-threshold: 1
+          critical-threshold: 0
+          high-threshold: 0

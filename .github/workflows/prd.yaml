@@ -37,7 +37,7 @@ jobs:
         run: echo "DEPLOY_VERSION=${{ inputs.use-latest && steps.semver.outputs.tag || inputs.version }}" >> "$GITHUB_ENV"
       - name: Generate job summary version to deploy
         run: |
-          echo "This GitHub Actions is going to deploy ${{ env.IMAGE_NAME }} to version ${{ env.DEPLOY_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "This GitHub Actions is going to deploy ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }} to version ${{ env.DEPLOY_VERSION }}" >> $GITHUB_STEP_SUMMARY
       - name: Check if container image tag exists
         uses: tyriis/docker-image-tag-exists@v2.1.0
         id: check-tag

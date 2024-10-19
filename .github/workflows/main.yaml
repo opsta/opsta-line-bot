@@ -130,7 +130,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Generate Trivy SCA Vulnerability Report
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0
         with:
           scan-type: "fs"
           scan-ref: .
@@ -144,7 +144,7 @@ jobs:
           path: trivy-sca-report.json
           retention-days: 1
       - name: Trivy SCA Vulnerability Fail Gate
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0
         with:
           scan-type: "fs"
           scan-ref: .
@@ -170,7 +170,7 @@ jobs:
             ${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
             > iac/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}-manifest.yaml
       - name: Generate Trivy IaC Vulnerability Report
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0
         with:
           scan-type: "fs"
           scan-ref: .
@@ -184,7 +184,7 @@ jobs:
           path: trivy-iac-report.json
           retention-days: 1
       - name: Trivy IaC Vulnerability Fail Gate
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0
         with:
           scan-type: "fs"
           scan-ref: .
@@ -232,7 +232,7 @@ jobs:
       - build-push
     steps:
       - name: Generate Trivy Image Vulnerability Report
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0
         with:
           image-ref: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}"
           scanners: 'vuln,misconfig,secret'
@@ -248,7 +248,7 @@ jobs:
           path: trivy-image-report.json
           retention-days: 1
       - name: Trivy Image Vulnerability Fail Gate
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@0
         with:
           image-ref: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}"
           scanners: 'vuln,misconfig,secret'

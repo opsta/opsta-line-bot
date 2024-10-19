@@ -43,7 +43,7 @@ jobs:
   tag-prd:
     runs-on: ubuntu-latest
     needs:
-      - defectdojo-prd-security-gate
+      - defectdojo-security-gate
     steps:
       - name: Get next semver version
         id: semver

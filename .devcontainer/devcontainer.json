@@ -36,7 +36,7 @@
   ],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "make",
+  // "postCreateCommand": "make",
 
   // Configure tool-specific properties.
   "customizations": {

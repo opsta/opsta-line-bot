@@ -81,8 +81,8 @@ jobs:
           ENDDAY=$(date -d "+1 days" +%Y-%m-%d)
 
           # Get DefectDojo Product ID
-          DEFECTDOJO_PRODUCT_ID=$(curl -X GET "${DEFECTDOJO_HOST}/api/v2/products/?name_exact=${{ github.event.repository.name }}"
-            --header "Authorization:Token ${DEFECTDOJO_TOKEN}"
+          DEFECTDOJO_PRODUCT_ID=$(curl -X GET "${DEFECTDOJO_HOST}/api/v2/products/?name_exact=${{ github.event.repository.name }}" \
+            --header "Authorization:Token ${DEFECTDOJO_TOKEN}" \
             --header "Accept:application/json" --fail-with-body | jq -r '.results[0].id // empty')
 
           # Create DefectDojo Product if not exists
@@ -99,9 +99,9 @@ jobs:
             JSON
             )
             # Create DefectDojo Product and get Product ID
-            DEFECTDOJO_PRODUCT_ID=$(curl -X POST "${DEFECTDOJO_HOST}/api/v2/products/"
-              --header "Authorization:Token ${DEFECTDOJO_TOKEN}"
-              --header "Content-Type:application/json"
+            DEFECTDOJO_PRODUCT_ID=$(curl -X POST "${DEFECTDOJO_HOST}/api/v2/products/" \
+              --header "Authorization:Token ${DEFECTDOJO_TOKEN}" \
+              --header "Content-Type:application/json" \
               --data-raw "${PAYLOAD}" --fail-with-body | jq -r '.id')
           fi
 
@@ -124,9 +124,9 @@ jobs:
           JSON
           )
           # Create DefectDojo Engagement
-          curl -X POST "${DEFECTDOJO_HOST}/api/v2/engagements/"
-            --header "Authorization:Token ${DEFECTDOJO_TOKEN}"
-            --header "Content-Type:application/json"
+          curl -X POST "${DEFECTDOJO_HOST}/api/v2/engagements/" \
+            --header "Authorization:Token ${DEFECTDOJO_TOKEN}" \
+            --header "Content-Type:application/json" \
             --data-raw "${PAYLOAD}" --fail-with-body | jq -e -r '.id'
 
   sonarqube:
@@ -145,31 +145,33 @@ jobs:
         with:
           args: >
             -D sonar.projectKey=${{ github.event.repository.name }}
-            -D sonar.projectName=${{ github.event.repository.name }}
             -D sonar.sources=.
             -D sonar.qualitygate.wait=true
         env:
           SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONARQUBE_HOST }}
       - name: Create SonarQube Report for DefectDojo
+        if: always()
         run: |
           # Install Sonar Report
           mkdir -p ~/.local/bin
           npm config set prefix '~/.local/'
           npm install --global sonar-report@3.1.6
+
           # Always run SAST Report from SonarQube
           export PATH=~/.local/bin/:$PATH
-          sonar-report
-            --sonarurl="${SONARQUBE_HOST}"
-            --sonartoken="${SONARQUBE_TOKEN}"
-            --sonarcomponent="${{ github.event.repository.name }}"
-            --project="${{ github.event.repository.name }}"
-            --application="${{ github.event.repository.name }}"
-            --release="${{ needs.setup.outputs.version }}-${{ github.sha }}"
-            --output="sonar-report.html"
+          sonar-report \
+            --sonarurl="${SONARQUBE_HOST}" \
+            --sonartoken="${SONARQUBE_TOKEN}" \
+            --sonarcomponent="${{ github.event.repository.name }}" \
+            --project="${{ github.event.repository.name }}" \
+            --application="${{ github.event.repository.name }}" \
+            --release="${{ needs.setup.outputs.version }}-${{ github.sha }}" \
+            --output="sonar-report.html" \
             --branch="main"
             # On SonarQube Community edition, you only can use main branch
       - name: Upload Sonar Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sonar-report
@@ -267,7 +269,7 @@ jobs:
 
   defectdojo-import:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
+    if: always() && startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
       - defectdojo-engagement
@@ -283,21 +285,21 @@ jobs:
           TODAY=$(date +%Y-%m-%d)
 
           # Import DefectDojo from Report
-          curl -X POST "${DEFECTDOJO_HOST}/api/v2/import-scan/" --fail-with-body
-            --header "Content-Type:multipart/form-data"
-            --header "Authorization:Token ${DEFECTDOJO_TOKEN}"
-            --form scan_date="${TODAY}"
-            --form product_name="${{ github.event.repository.name }}"
-            --form engagement_name="${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}"
-            --form environment="${{ needs.setup.outputs.deploy_env }}"
-            --form close_old_findings="true"
-            --form close_old_findings_product_scope="true"
-            --form minimum_severity="Info"
-            --form service="${{ github.event.repository.name }}"
-            --form file=@"${{ matrix.defectdojo_report_file }}"
-            --form scan_type="${{ matrix.defectdojo_scan_type }}"
-            --form test_title="${{ matrix.defectdojo_test_title }}"
-            --form deduplication_on_engagement="true"
+          curl -X POST "${DEFECTDOJO_HOST}/api/v2/import-scan/" --fail-with-body \
+            --header "Content-Type:multipart/form-data" \
+            --header "Authorization:Token ${DEFECTDOJO_TOKEN}" \
+            --form scan_date="${TODAY}" \
+            --form product_name="${{ github.event.repository.name }}" \
+            --form engagement_name="${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}" \
+            --form environment="${{ needs.setup.outputs.deploy_env }}" \
+            --form close_old_findings="true" \
+            --form close_old_findings_product_scope="true" \
+            --form minimum_severity="Info" \
+            --form service="${{ github.event.repository.name }}" \
+            --form file=@"${{ matrix.defectdojo_report_file }}" \
+            --form scan_type="${{ matrix.defectdojo_scan_type }}" \
+            --form test_title="${{ matrix.defectdojo_test_title }}" \
+            --form deduplication_on_engagement="true" \
             --form auto_create_context="true"
     strategy:
       matrix:
@@ -305,21 +307,21 @@ jobs:
           - defectdojo_report_file: sonar-report.html
             defectdojo_scan_type: SonarQube Scan
             defectdojo_test_title: SonarQube Scan
-          - defectdojo_report_file: trivy-sca-report.json
-            defectdojo_scan_type: Trivy Scan
-            defectdojo_test_title: Trivy SCA Scan
-          - defectdojo_report_file: trivy-iac-report.json
-            defectdojo_scan_type: Trivy Scan
-            defectdojo_test_title: Trivy IaC Scan
-          - defectdojo_report_file: trivy-image-report.json
-            defectdojo_scan_type: Trivy Scan
-            defectdojo_test_title: Trivy Image Scan
-          - defectdojo_report_file: zap-baseline-report.xml
-            defectdojo_scan_type: ZAP Scan
-            defectdojo_test_title: ZAP Scan Baseline
-          - defectdojo_report_file: zap-api-report.xml
-            defectdojo_scan_type: ZAP Scan
-            defectdojo_test_title: ZAP Scan API
-          - defectdojo_report_file: zap-full-report.xml
-            defectdojo_scan_type: ZAP Scan
-            defectdojo_test_title: ZAP Scan Full
+          # - defectdojo_report_file: trivy-sca-report.json
+          #   defectdojo_scan_type: Trivy Scan
+          #   defectdojo_test_title: Trivy SCA Scan
+          # - defectdojo_report_file: trivy-iac-report.json
+          #   defectdojo_scan_type: Trivy Scan
+          #   defectdojo_test_title: Trivy IaC Scan
+          # - defectdojo_report_file: trivy-image-report.json
+          #   defectdojo_scan_type: Trivy Scan
+          #   defectdojo_test_title: Trivy Image Scan
+          # - defectdojo_report_file: zap-baseline-report.xml
+          #   defectdojo_scan_type: ZAP Scan
+          #   defectdojo_test_title: ZAP Scan Baseline
+          # - defectdojo_report_file: zap-api-report.xml
+          #   defectdojo_scan_type: ZAP Scan
+          #   defectdojo_test_title: ZAP Scan API
+          # - defectdojo_report_file: zap-full-report.xml
+          #   defectdojo_scan_type: ZAP Scan
+          #   defectdojo_test_title: ZAP Scan Full

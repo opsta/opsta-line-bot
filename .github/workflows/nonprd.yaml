@@ -1,16 +1,4 @@
-# Secrets Variables
-## ARGOCD_AUTH_TOKEN
-## ARGOCD_SERVER
-## DEFECTDOJO_HOST (MUST PUT SLASH AT THE END)
-## DEFECTDOJO_USERNAME
-## DEFECTDOJO_PASSWORD
-## DOCKERHUB_TOKEN
-## DOCKERHUB_USERNAME
-## SONARQUBE_TOKEN
-## SONARQUBE_HOST
-## SONARQUBE_ORG
-
-name: CI/CD for Opsta Line BOT
+name: CI/CD for Opsta Line BOT Non-Production Environments
 
 env:
   IMAGE_NAME: ghcr.io/opsta/opsta-linebot
@@ -25,10 +13,8 @@ on:
       - 'requirements-orig-*.txt'
       - '.devcontainer/**'
       - 'iac/**'
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
     branches:
-      - "main"
+      - 'main'
 
 jobs:
   setup:
@@ -36,13 +22,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set DEPLOY_ENV for production
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: echo "DEPLOY_ENV=prd" >> "$GITHUB_ENV"
-      - name: Set DEPLOY_ENV for non-production
-        if: startsWith(github.ref, 'refs/tags/v') != true
+      - name: Set DEPLOY_ENV
         run: |
           if [[ ${{ github.ref_name }} == 'main' || ${{ github.ref_name }} == 'master' ]]; then
+            # You can change this to uat for main/master branch in case of you have more than dev and production environment
             echo "DEPLOY_ENV=dev" >> "$GITHUB_ENV"
           else
             echo "DEPLOY_ENV=${{ github.ref_name }}" >> "$GITHUB_ENV"
@@ -61,8 +44,6 @@ jobs:
             type=edge
             # dynamically set the branch name as a prefix
             type=sha,prefix=${{ env.DEPLOY_ENV }}-,priority=750
-            # push tag event on valid semver git tag
-            type=semver,pattern={{raw}}
     # For use in other jobs
     outputs:
       tags: "${{ steps.meta.outputs.tags }}"
@@ -72,7 +53,6 @@ jobs:
 
   sonarqube:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -124,7 +104,6 @@ jobs:
 
   trivy-sca-report:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -147,7 +126,6 @@ jobs:
 
   trivy-sca-security-gate:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -165,7 +143,6 @@ jobs:
 
   trivy-iac-report:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -195,7 +172,6 @@ jobs:
 
   trivy-iac-security-gate:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -218,10 +194,8 @@ jobs:
           format: table
           exit-code: 1
 
-  # For non-production environments
   build-push:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
     steps:
@@ -250,7 +224,6 @@ jobs:
 
   trivy-image-report:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
       - build-push
@@ -274,7 +247,6 @@ jobs:
 
   trivy-image-security-gate:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
       - build-push
@@ -288,45 +260,6 @@ jobs:
           format: table
           exit-code: 1
 
-  defectdojo-prd-security-gate:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: DefectDojo Security Gate Thresholds
-        uses: portswigger-cloud/defectdojo-findings-thresholds@v1
-        with:
-          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
-          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
-          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
-          defectdojo-product: ${{ github.event.repository.name }}
-          # Need to put every thresholds to make it working
-          total-threshold: 1000000
-          critical-threshold: 0
-          high-threshold: 0
-          medium-threshold: 1000000
-          low-threshold: 1000000
-          info-threshold: 1000000
-
-  # For production environment
-  tag-prd:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs:
-      - setup
-      - defectdojo-prd-security-gate
-    steps:
-      - name: Login to Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup Crane
-        uses: imjasonh/setup-crane@v0.4
-      - name: Copy Docker Image from dev to production
-        run: crane copy ${{ env.IMAGE_NAME }}:edge ${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}
-
   # Commit to Git for ArgoCD
   gitops-commit:
     runs-on: ubuntu-latest
@@ -335,7 +268,6 @@ jobs:
     needs:
       - setup
       - build-push
-      - tag-prd
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -369,7 +301,7 @@ jobs:
 
   zap-baseline:
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') != true }}
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - setup
       - gitops-sync
@@ -391,7 +323,7 @@ jobs:
 
   zap-api:
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') != true }}
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - setup
       - gitops-sync
@@ -413,7 +345,7 @@ jobs:
 
   zap-full:
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') != true }}
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - setup
       - gitops-sync
@@ -435,7 +367,7 @@ jobs:
 
   defectdojo-import:
     runs-on: ubuntu-latest
-    if: always() && startsWith(github.ref, 'refs/tags/v') != true
+    if: always()
     needs:
       - setup
       - sonarqube
@@ -489,7 +421,7 @@ jobs:
 
   defectdojo-findings:
     runs-on: ubuntu-latest
-    if: always() && startsWith(github.ref, 'refs/tags/v') != true
+    if: always()
     needs:
       - defectdojo-import
     steps:
@@ -503,7 +435,7 @@ jobs:
 
   defectdojo-dev-security-gate:
     runs-on: ubuntu-latest
-    if: always() && startsWith(github.ref, 'refs/tags/v') != true
+    if: always()
     needs:
       - defectdojo-import
     steps:

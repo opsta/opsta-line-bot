@@ -1,0 +1,53 @@
+name: Tagging Production Image for Opsta Line BOT
+
+env:
+  IMAGE_NAME: ghcr.io/opsta/opsta-linebot
+
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'Makefile'
+      - 'docker-compose.yml'
+      - '.gitignore'
+      - 'requirements-orig-*.txt'
+      - '.devcontainer/**'
+      - 'iac/**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  defectdojo-prd-security-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DefectDojo Security Gate Thresholds
+        uses: portswigger-cloud/defectdojo-findings-thresholds@v1
+        with:
+          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
+          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
+          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
+          defectdojo-product: ${{ github.event.repository.name }}
+          # Need to put every thresholds to make it working
+          total-threshold: 1000000
+          critical-threshold: 0
+          high-threshold: 0
+          medium-threshold: 1000000
+          low-threshold: 1000000
+          info-threshold: 1000000
+
+  tag-prd:
+    runs-on: ubuntu-latest
+    needs:
+      - defectdojo-prd-security-gate
+    steps:
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Crane
+        uses: imjasonh/setup-crane@v0.4
+      - name: Copy Docker Image from dev to production
+        run: crane copy ${{ env.IMAGE_NAME }}:edge ${{ env.IMAGE_NAME }}:${{ github.ref_name }}

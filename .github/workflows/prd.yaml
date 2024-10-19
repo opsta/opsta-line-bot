@@ -1,0 +1,59 @@
+name: CI/CD for Opsta Line BOT Production Environment
+
+env:
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME: opsta/opsta-linebot
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Put version to deploy to production'
+        required: true
+        type: string
+
+jobs:
+  # Commit to Git for ArgoCD
+  gitops-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check if container image tag exists
+        uses: tyriis/docker-image-tag-exists@v2
+        id: check-tag
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          repository: ${{ env.IMAGE_NAME }}
+          tag: ${{ inputs.version }}
+      - name: Fail if container image tag not exists
+        if: steps.check-tag.outputs.tag == 'not found'
+        run: |
+          echo "::error title=Container image tag not found::Container image tag ${{ inputs.version }} does not exist"
+          exit 1
+      - name: Update Image Version in Helm Value file
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: "iac/helm-values/opsta-line-bot-prd.yaml"
+          propertyPath: image.tag
+          value: ${{ inputs.version }}
+          branch: main
+          message: "Update Image Version to ${{ inputs.version }}"
+
+  # ArgoCD Sync
+  gitops-sync:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/argoproj/argocd:v2.12.4
+      env:
+        ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+        ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+    # run after all of needs are complete (whether skipped or success)
+    if: ${{ !cancelled() && !failure() }}
+    needs:
+      - gitops-commit
+    steps:
+      - name: Sync ArgoCD
+        run: |
+          argocd app sync demo-opsta-line-bot-prd/opsta-line-bot-prd --project demo
+          argocd app wait demo-opsta-line-bot-prd/opsta-line-bot-prd --health

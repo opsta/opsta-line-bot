@@ -2,7 +2,8 @@
 ## ARGOCD_AUTH_TOKEN
 ## ARGOCD_SERVER
 ## DEFECTDOJO_HOST
-## DEFECTDOJO_TOKEN
+## DEFECTDOJO_USERNAME
+## DEFECTDOJO_PASSWORD
 ## DOCKERHUB_TOKEN
 ## DOCKERHUB_USERNAME
 ## SONARQUBE_TOKEN
@@ -220,32 +221,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - name: Import Security Test Report to DefectDojo
-        run: |
-          # Timestamp variables
-          TODAY=$(date +%Y-%m-%d)
-          echo "TODAY: ${TODAY}"
-
-          # Import DefectDojo from Report
-          pwd
-          ls -la
-          curl -X POST "${{ secrets.DEFECTDOJO_HOST }}/api/v2/import-scan/" --fail-with-body \
-            --header "Content-Type:multipart/form-data" \
-            --header "Authorization:Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
-            --form scan_date="${TODAY}" \
-            --form product_name="${{ github.event.repository.name }}" \
-            --form product_type_name="Research and Development" \
-            --form engagement_name="${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}" \
-            --form environment="${{ needs.setup.outputs.deploy_env }}" \
-            --form close_old_findings="true" \
-            --form close_old_findings_product_scope="true" \
-            --form minimum_severity="Info" \
-            --form service="${{ github.event.repository.name }}" \
-            --form file=@"${{ matrix.defectdojo_report_file }}" \
-            --form scan_type="${{ matrix.defectdojo_scan_type }}" \
-            --form test_title="${{ matrix.defectdojo_test_title }}" \
-            --form deduplication_on_engagement="true" \
-            --form auto_create_context="true"
+      - name: Import Security Test Report into DefectDojo
+        uses: portswigger-cloud/defectdojo-github-action@v1
+        with:
+          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
+          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
+          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
+          defectdojo-product-type: Research and Development
+          defectdojo-product: ${{ github.event.repository.name }}
+          defectdojo-environment-type: ${{ needs.setup.outputs.deploy_env }}
+          defectdojo-scan-type: ${{ matrix.defectdojo_scan_type }}
+          defectdojo-engagement-name: ${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}
+          scan-results-file-name: ${{ matrix.defectdojo_report_file }}
     strategy:
       matrix:
         include:

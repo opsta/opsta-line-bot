@@ -89,6 +89,7 @@ jobs:
             -D sonar.projectKey=${{ github.event.repository.name }}
             -D sonar.sources=.
             -D sonar.qualitygate.wait=true
+            -D sonar.python.version=3.12
         env:
           SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONARQUBE_HOST }}
@@ -346,6 +347,48 @@ jobs:
           argocd app sync demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --project demo
           argocd app wait demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --health
 
+  zap-baseline:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - setup
+      - gitops-sync
+    steps:
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0
+        with:
+          target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
+          allow_issue_writing: false
+          artifact_name: zap-baseline-scan
+
+  zap-api:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - setup
+      - gitops-sync
+    steps:
+      - name: ZAP API Scan
+        uses: zaproxy/action-api-scan@v0
+        with:
+          target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
+          allow_issue_writing: false
+          artifact_name: zap-baseline-scan
+
+  zap-full:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') != true
+    needs:
+      - setup
+      - gitops-sync
+    steps:
+      - name: ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0
+        with:
+          target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
+          allow_issue_writing: false
+          artifact_name: zap-baseline-scan
+
   defectdojo-import:
     runs-on: ubuntu-latest
     if: always() && startsWith(github.ref, 'refs/tags/v') != true
@@ -424,5 +467,9 @@ jobs:
           defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
           defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
           defectdojo-product: ${{ github.event.repository.name }}
-          critical-threshold: 1
-          high-threshold: 1
+          total-threshold: 10
+          critical-threshold: 2
+          high-threshold: 2
+          medium-threshold: 2
+          low-threshold: 2
+          info-threshold: 2

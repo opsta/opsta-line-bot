@@ -1,12 +1,15 @@
 VENV = default
 
-all: venv install run
+all: install run
 
 venv:
 	test -d .venv/${VENV} || python -m venv .venv/${VENV}
 
-install:
+install: venv
 	. .venv/${VENV}/bin/activate && pip install -r requirements.txt
+
+install-cpu: venv
+	. .venv/${VENV}/bin/activate && pip install -r requirements-orig-cpu.txt
 
 run:
 	export $(xargs <.env)

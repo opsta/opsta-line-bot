@@ -144,7 +144,7 @@ jobs:
           path: trivy-sca-report.json
           retention-days: 1
 
-  trivy-sca-fail-gate:
+  trivy-sca-security-gate:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
@@ -192,7 +192,7 @@ jobs:
           path: trivy-iac-report.json
           retention-days: 1
 
-  trivy-iac-fail-gate:
+  trivy-iac-security-gate:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
@@ -271,7 +271,7 @@ jobs:
           path: trivy-image-report.json
           retention-days: 1
 
-  trivy-image-fail-gate:
+  trivy-image-security-gate:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
@@ -424,5 +424,5 @@ jobs:
           defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
           defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
           defectdojo-product: ${{ github.event.repository.name }}
-          critical-threshold: 0
-          high-threshold: 0
+          critical-threshold: 1
+          high-threshold: 1

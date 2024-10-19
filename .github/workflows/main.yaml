@@ -467,9 +467,5 @@ jobs:
           defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
           defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
           defectdojo-product: ${{ github.event.repository.name }}
-          total-threshold: 10
           critical-threshold: 2
           high-threshold: 2
-          medium-threshold: 2
-          low-threshold: 2
-          info-threshold: 2

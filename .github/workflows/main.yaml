@@ -352,10 +352,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
-      # - gitops-sync
+      - gitops-sync
     steps:
       - name: ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0
+        uses: zaproxy/action-baseline@v0.13.0
         with:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
@@ -366,10 +366,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
-      # - gitops-sync
+      - gitops-sync
     steps:
       - name: ZAP API Scan
-        uses: zaproxy/action-api-scan@v0
+        uses: zaproxy/action-api-scan@v0.8.0
         with:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false
@@ -380,10 +380,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') != true
     needs:
       - setup
-      # - gitops-sync
+      - gitops-sync
     steps:
       - name: ZAP Full Scan
-        uses: zaproxy/action-full-scan@v0
+        uses: zaproxy/action-full-scan@v0.11.0
         with:
           target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
           allow_issue_writing: false

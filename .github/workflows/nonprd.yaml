@@ -433,7 +433,7 @@ jobs:
           defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
           defectdojo-product: ${{ github.event.repository.name }}
 
-  defectdojo-dev-security-gate:
+  defectdojo-security-gate:
     runs-on: ubuntu-latest
     if: always()
     needs:

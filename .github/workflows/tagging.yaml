@@ -12,13 +12,18 @@ on:
         type: choice
         default: patch
         options:
-          - major
-          - minor
           - patch
+          - minor
+          - major
+      skip-security-gate:
+        type: boolean
+        default: false
+        description: Skip security gate check
 
 jobs:
-  defectdojo-prd-security-gate:
+  defectdojo-security-gate:
     runs-on: ubuntu-latest
+    if: ${{ !inputs.skip-security-gate }}
     steps:
       - name: DefectDojo Security Gate Thresholds
         uses: portswigger-cloud/defectdojo-findings-thresholds@v1

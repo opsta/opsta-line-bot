@@ -102,7 +102,7 @@ jobs:
             --release="${{ inputs.image_tag }}" \
             --output="${{ inputs.sonarqube_report_filename }}" \
             --branch="${{ inputs.branch }}" \
-            > $SONAR_REPORT_OUTPUT_FILENAME
+            > $SONAR_REPORT_OUTPUT_FILENAME 2>&1
       - name: Publish Sonar Report Output to Summary
         if: always()
         run: |

@@ -46,7 +46,7 @@ text_splitter_chunk_size = int(os.environ.get('TEXT_SPLITTER_CHUNK_SIZE', '1000'
 text_splitter_chunk_overlap = int(os.environ.get('TEXT_SPLITTER_CHUNK_OVERLAP', '200'))
 search_return_documents = int(os.environ.get('SEARCH_RETURN_DOCUMENTS', '5'))
 # THIS IS DUMMY AWS SECRET KEY FOR SECURITY TESTING
-aws_secret_key = int(os.environ.get('AWS_SECRET_KEY', '4wcTdlSgTZAIoT7JPLduafIE90St95bQffGx3laI'))
+dummy_aws_secret_key = '4wcTdlSgTZAIoT7JPLduafIE90St95bQffGx3laI'
 
 retriever = None
 system_prompt = (

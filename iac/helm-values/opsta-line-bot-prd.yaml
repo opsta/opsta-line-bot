@@ -35,7 +35,7 @@ podAnnotations:
 secretName: opsta-line-bot-secrets-prd
 volumes:
   - name: hf-hub
-    path: /tmp/hub
+    path: /tmp
     size: 500Mi
     storageClass: nfs
 

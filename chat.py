@@ -43,6 +43,7 @@ answer_language = os.environ.get('ANSWER_LANGUAGE', 'English')
 text_splitter_chunk_size = int(os.environ.get('TEXT_SPLITTER_CHUNK_SIZE', '1000'))
 text_splitter_chunk_overlap = int(os.environ.get('TEXT_SPLITTER_CHUNK_OVERLAP', '200'))
 search_return_documents = int(os.environ.get('SEARCH_RETURN_DOCUMENTS', '5'))
+flask_secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
 # THIS IS DUMMY AWS SECRET KEY FOR SECURITY TESTING
 dummy_aws_secret_key = ''
 # 4wcTdlSgTZAIoT7JPLduafIE90St95bQffGx3laIEXAMPLEKEY
@@ -121,7 +122,7 @@ def init_app():
   # Enable CSRF
   csrf = CSRFProtect()
   csrf.init_app(app)
-  app.config['SECRET_KEY'] = os.urandom(32)
+  app.config['SECRET_KEY'] = flask_secret_key
 
   with app.app_context():
     # Load PDF file

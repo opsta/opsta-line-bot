@@ -32,7 +32,7 @@ jobs:
         run: echo "DEPLOY_VERSION=${{ inputs.use-latest && steps.semver.outputs.tag || inputs.version }}" >> "$GITHUB_ENV"
       - name: Generate job summary version to deploy
         run: |
-          echo "This GitHub Actions is going to deploy ${{ vars.IMAGE_REGISTRY }}/${{ vars.IMAGE_NAME }} to version ${{ env.DEPLOY_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "This GitHub Actions is going to deploy ${{ vars.IMAGE_NAME }} to version ${{ env.DEPLOY_VERSION }}" >> $GITHUB_STEP_SUMMARY
     outputs:
       image_tag: ${{ env.DEPLOY_VERSION }}
       helm_values_file: "${{ vars.HELM_VALUES_PATH }}/${{ vars.PREFIX_IAC_FILENAME }}-prd.yaml"

@@ -39,6 +39,7 @@ volumes:
     size: 500Mi
     storageClass: nfs
 
+# SECURITY VULNERABILITY
 securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false

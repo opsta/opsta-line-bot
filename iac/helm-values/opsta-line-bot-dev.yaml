@@ -38,6 +38,8 @@ volumes:
     path: /tmp
     size: 500Mi
     storageClass: nfs
+
+# SECURITY VULNERABILITY
 securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false

@@ -1,8 +1,20 @@
 # DevSecOps Pipeline
 
-## Secret Variables
+## Variables
 
-These are the list of variables you need to put in GitHub Actions Repository secrets.
+These are the list of variables you need to put in your GitHub Actions Repository.
+
+### Repository Variables
+
+* IMAGE_REGISTRY: ghcr.io
+* IMAGE_REPO: opsta/opsta-line-bot
+* IMAGE_NAME: ghcr.io/opsta/opsta-line-bot
+* ARGOCD_PROJECT: demo
+* PREFIX_K8S_NAMESPACE: demo-opsta-line-bot
+* PREFIX_IAC_FILENAME: opsta-line-bot
+* HELM_VALUES_PATH: iac/helm-values
+
+### Secret Variables
 
 * ARGOCD_AUTH_TOKEN: [{YOUR ARGOCD TOKEN}](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_account_generate-token/)
 * ARGOCD_SERVER: https://argocd.example.com

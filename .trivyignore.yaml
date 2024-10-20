@@ -1,11 +1,3 @@
 misconfigurations:
   - id: AVD-KSV-0109
-    paths:
-      - "opsta-line-bot-dev-manifest.yaml"
-      - "opsta-line-bot-prd-manifest.yaml"
-    statement: False Positive
   - id: AVD-KSV-01010
-    paths:
-      - "opsta-line-bot-dev-manifest.yaml"
-      - "opsta-line-bot-prd-manifest.yaml"
-    statement: False Positive

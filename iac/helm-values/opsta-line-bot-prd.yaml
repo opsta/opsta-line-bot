@@ -40,9 +40,9 @@ volumes:
     storageClass: nfs
 
 # SECURITY VULNERABILITY
-securityContext:
-  readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
-  runAsNonRoot: true
-  seccompProfile:
-    type: RuntimeDefault
+# securityContext:
+#   readOnlyRootFilesystem: true
+#   allowPrivilegeEscalation: false
+#   runAsNonRoot: true
+#   seccompProfile:
+#     type: RuntimeDefault

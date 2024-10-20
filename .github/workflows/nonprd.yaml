@@ -148,7 +148,6 @@ jobs:
       zap_target: ${{ needs.setup.outputs.deploy_url }}
       deploy_env: ${{ needs.setup.outputs.deploy_env }}
       defectdojo_product_name: ${{ github.event.repository.name }}
-      defectdojo_engagement_name: ${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}
     secrets:
       defectdojo_host: ${{ secrets.DEFECTDOJO_HOST }}
       defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}

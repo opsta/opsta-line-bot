@@ -2,7 +2,7 @@ replicas: 1
 containerPort: 5000
 image:
   repository: ghcr.io/opsta/opsta-line-bot
-  tag: dev-091b060
+  tag: dev-8496abb
   pullPolicy: Always
 probe:
   enabled: true
@@ -38,8 +38,6 @@ volumes:
     path: /tmp
     size: 500Mi
     storageClass: nfs
-
-# SECURITY VULNERABILITY
 securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false

@@ -31,7 +31,7 @@ jobs:
 
   tag:
     uses: opsta/.github/.github/workflows/tag-and-release.yaml@main
-    if: ${{ !inputs.skip-security-gate }}
+    if: ${{ !cancelled() && !failure() }}
     needs:
       - defectdojo
     with:

@@ -127,7 +127,9 @@ jobs:
         run: |
           if [[ -s $ZAP_BASELINE_OUTPUT_FILENAME ]]; then
             {
+              echo "### ZAP Baseline Output"
               echo "<details><summary>Click to expand</summary>"
+              echo ""
               cat $ZAP_BASELINE_OUTPUT_FILENAME
               echo "</details>"
             } >> $GITHUB_STEP_SUMMARY
@@ -140,6 +142,7 @@ jobs:
           path: ${{ inputs.zap_baseline_report_filename }}
           retention-days: ${{ inputs.report_retention_days }}
     env:
+      # Filename must be report_md.md to avoid error
       ZAP_BASELINE_OUTPUT_FILENAME: report_md.md
 
   zap-api:
@@ -159,7 +162,9 @@ jobs:
         run: |
           if [[ -s $ZAP_API_OUTPUT_FILENAME ]]; then
             {
+              echo "### ZAP API Output"
               echo "<details><summary>Click to expand</summary>"
+              echo ""
               cat $ZAP_API_OUTPUT_FILENAME
               echo "</details>"
             } >> $GITHUB_STEP_SUMMARY
@@ -172,6 +177,7 @@ jobs:
           path: ${{ inputs.zap_api_report_filename }}
           retention-days: ${{ inputs.report_retention_days }}
     env:
+      # Filename must be report_md.md to avoid error
       ZAP_API_OUTPUT_FILENAME: report_md.md
 
   zap-full:
@@ -191,7 +197,9 @@ jobs:
         run: |
           if [[ -s $ZAP_FULL_OUTPUT_FILENAME ]]; then
             {
+              echo "### ZAP Full Output"
               echo "<details><summary>Click to expand</summary>"
+              echo ""
               cat $ZAP_FULL_OUTPUT_FILENAME
               echo "</details>"
             } >> $GITHUB_STEP_SUMMARY
@@ -204,6 +212,7 @@ jobs:
           path: ${{ inputs.zap_full_report_filename }}
           retention-days: ${{ inputs.report_retention_days }}
     env:
+      # Filename must be report_md.md to avoid error
       ZAP_FULL_OUTPUT_FILENAME: report_md.md
 
   defectdojo-import:

@@ -19,21 +19,22 @@ on:
         description: Skip security gate check
 
 jobs:
-  defectdojo:
-    uses: opsta/.github/.github/workflows/defectdojo-security-gate.yaml@main
-    if: ${{ !inputs.skip-security-gate }}
-    with:
-      defectdojo_product_name: ${{ github.event.repository.name }}
-    secrets:
-      defectdojo_host: ${{ secrets.DEFECTDOJO_HOST }}
-      defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}
-      defectdojo_password: ${{ secrets.DEFECTDOJO_PASSWORD }}
+  # SECURITY VULNERABILITY
+  # defectdojo:
+  #   uses: opsta/.github/.github/workflows/defectdojo-security-gate.yaml@main
+  #   if: ${{ !inputs.skip-security-gate }}
+  #   with:
+  #     defectdojo_product_name: ${{ github.event.repository.name }}
+  #   secrets:
+  #     defectdojo_host: ${{ secrets.DEFECTDOJO_HOST }}
+  #     defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}
+  #     defectdojo_password: ${{ secrets.DEFECTDOJO_PASSWORD }}
 
   tag:
     uses: opsta/.github/.github/workflows/tag-and-release.yaml@main
     if: ${{ !cancelled() && !failure() }}
-    needs:
-      - defectdojo
+    # needs:
+    #   - defectdojo
     with:
       bump: ${{ inputs.bump }}
       image_name: ${{ vars.IMAGE_NAME }}

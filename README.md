@@ -48,3 +48,20 @@ stringData:
   PDF_FILE: https://storage.googleapis.com/bucket/file.pdf
   OPENAI_API_BASE: https://api.openai.com/v1
 ```
+
+## Security Context
+
+* Add the following to `iac/helm-values/*` to increase container security
+
+```yaml
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop: ALL
+```

@@ -1,8 +1,13 @@
 name: 3. Production deployment
 
 env:
+  PREFIX_K8S_NAMESPACE: demo-${{ github.event.repository.name }}
+  PREFIX_IAC_FILENAME: ${{ github.event.repository.name }}
+  ARGOCD_PROJECT: demo
+  HELM_VALUES_PATH: iac/helm-values
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_REPO: ${{ github.repository }}
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 on:
   workflow_dispatch:
@@ -18,8 +23,7 @@ on:
         description: 'Put version to deploy to production'
 
 jobs:
-  # Commit to Git for ArgoCD
-  gitops-commit:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,41 +42,26 @@ jobs:
       - name: Generate job summary version to deploy
         run: |
           echo "This GitHub Actions is going to deploy ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }} to version ${{ env.DEPLOY_VERSION }}" >> $GITHUB_STEP_SUMMARY
-      - name: Check if container image tag exists
-        uses: tyriis/docker-image-tag-exists@v2.1.0
-        id: check-tag
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          repository: ${{ env.IMAGE_NAME }}
-          tag: ${{ env.DEPLOY_VERSION }}
-      - name: Fail if container image tag not exists
-        if: steps.check-tag.outputs.tag == 'not found'
-        run: |
-          echo "::error title=Container image tag not found::Container image tag ${{ env.DEPLOY_VERSION }} does not exist"
-          exit 1
-      - name: Update Image Version in Helm Value file
-        uses: fjogeleit/yaml-update-action@main
-        with:
-          valueFile: "iac/helm-values/opsta-line-bot-prd.yaml"
-          propertyPath: image.tag
-          value: ${{ env.DEPLOY_VERSION }}
-          branch: main
-          message: "Update Image Version to ${{ env.DEPLOY_VERSION }}"
+    outputs:
+      image_tag: ${{ env.DEPLOY_VERSION }}
+      image_repo: ${{ env.IMAGE_REPO }}
+      image_registry: ${{ env.IMAGE_REGISTRY }}
+      helm_values_file: "${{ env.HELM_VALUES_PATH }}/${{ env.PREFIX_IAC_FILENAME }}-prd.yaml"
+      argocd_project: ${{ env.ARGOCD_PROJECT }}
+      argocd_app_name: ${{ env.PREFIX_K8S_NAMESPACE }}-${{ env.DEPLOY_ENV }}/${{ env.PREFIX_IAC_FILENAME }}-${{ env.DEPLOY_ENV }}
 
-  # ArgoCD Sync
-  gitops-sync:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/argoproj/argocd:v2.12.4
-      env:
-        ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-        ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-    # run after all of needs are complete (whether skipped or success)
-    if: ${{ !cancelled() && !failure() }}
+  gitops-argocd:
+    uses: opsta/.github/.github/workflows/gitops-argocd.yaml@main
     needs:
-      - gitops-commit
-    steps:
-      - name: Sync ArgoCD
-        run: |
-          argocd app sync demo-opsta-line-bot-prd/opsta-line-bot-prd --project demo
-          argocd app wait demo-opsta-line-bot-prd/opsta-line-bot-prd --health
+      - setup
+    with:
+      helm_values_file: ${{ needs.setup.outputs.helm_values_file }}
+      helm_image_tag_value: ${{ needs.setup.outputs.image_tag }}
+      argocd_project: ${{ needs.setup.outputs.argocd_project }}
+      argocd_app_name: ${{ needs.setup.outputs.argocd_app_name }}
+      image_registry: ${{ needs.setup.outputs.image_registry }}
+      image_repo: ${{ needs.setup.outputs.image_repo }}
+      image_tag: ${{ needs.setup.outputs.image_tag }}
+    secrets:
+      argocd_server: ${{ secrets.ARGOCD_SERVER }}
+      argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN }}

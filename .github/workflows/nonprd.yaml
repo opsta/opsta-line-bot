@@ -8,6 +8,7 @@ env:
   HELM_CHART_NAME: oci://ghcr.io/gimlet-io/onechart
   HELM_CHART_VERSION: "0.73.0"
   IMAGE_REGISTRY: ghcr.io
+  IMAGE_REPO: ${{ github.repository }}
   IMAGE_NAME: ghcr.io/${{ github.repository }}
   # Environment name for main/master branch eg. dev or uat
   MAIN_BRANCH_ENV_NAME: dev
@@ -63,12 +64,16 @@ jobs:
       labels: ${{ steps.meta.outputs.labels }}
       image_tag: ${{ steps.meta.outputs.version }}
       image_name: ${{ env.IMAGE_NAME }}
+      image_repo: ${{ env.IMAGE_REPO }}
+      image_registry: ${{ env.IMAGE_REGISTRY }}
       deploy_env: ${{ env.DEPLOY_ENV }}
       deploy_url: ${{ env.DEPLOY_URL }}
       sonarqube_args: ${{ env.SONARQUBE_ARGS }}
-      helm_values_file: "${{ env.HELM_VALUES_PATH }}/${{ github.event.repository.name }}-${{ env.DEPLOY_ENV }}.yaml"
+      helm_values_file: "${{ env.HELM_VALUES_PATH }}/${{ env.PREFIX_IAC_FILENAME }}-${{ env.DEPLOY_ENV }}.yaml"
       helm_chart_name: ${{ env.HELM_CHART_NAME }}
       helm_chart_version: ${{ env.HELM_CHART_VERSION }}
+      argocd_project: ${{ env.ARGOCD_PROJECT }}
+      argocd_app_name: ${{ env.PREFIX_K8S_NAMESPACE }}-${{ env.DEPLOY_ENV }}/${{ env.PREFIX_IAC_FILENAME }}-${{ env.DEPLOY_ENV }}
 
   sec-predeploy:
     uses: opsta/.github/.github/workflows/security-predeploy.yaml@main
@@ -126,52 +131,28 @@ jobs:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
 
-  # Commit to Git for ArgoCD
-  gitops-commit:
-    runs-on: ubuntu-latest
-    # run after all of needs are complete (whether skipped or success)
-    if: ${{ !cancelled() && !failure() }}
+  gitops-argocd:
+    uses: opsta/.github/.github/workflows/gitops-argocd.yaml@main
     needs:
       - setup
       - build-push
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Update Image Version in Helm Value file
-        uses: fjogeleit/yaml-update-action@main
-        with:
-          valueFile: "${{ env.HELM_VALUES_PATH }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}.yaml"
-          propertyPath: image.tag
-          value: ${{ needs.setup.outputs.image_tag }}
-          branch: main
-          message: "Update Image Version to ${{ needs.setup.outputs.image_tag }}"
-
-  # ArgoCD Sync
-  gitops-sync:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/argoproj/argocd:v2.12.4
-      env:
-        ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-        ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-    # run after all of needs are complete (whether skipped or success)
-    if: ${{ !cancelled() && !failure() }}
-    needs:
-      - setup
-      - gitops-commit
-    steps:
-      - name: Sync ArgoCD
-        run: |
-          argocd app sync --project ${{ env.ARGOCD_PROJECT }} \
-            ${{ env.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}
-          argocd app wait --health \
-            ${{ env.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}
+    with:
+      helm_values_file: ${{ needs.setup.outputs.helm_values_file }}
+      helm_image_tag_value: ${{ needs.setup.outputs.image_tag }}
+      argocd_project: ${{ needs.setup.outputs.argocd_project }}
+      argocd_app_name: ${{ needs.setup.outputs.argocd_app_name }}
+      image_registry: ${{ needs.setup.outputs.image_registry }}
+      image_repo: ${{ needs.setup.outputs.image_repo }}
+      image_tag: ${{ needs.setup.outputs.image_tag }}
+    secrets:
+      argocd_server: ${{ secrets.ARGOCD_SERVER }}
+      argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN }}
 
   sec-postdeploy:
     uses: opsta/.github/.github/workflows/security-postdeploy.yaml@main
     needs:
       - setup
-      - gitops-sync
+      - gitops-argocd
     with:
       github_repo_name: ${{ github.event.repository.name }}
       zap_target: ${{ needs.setup.outputs.deploy_url }}

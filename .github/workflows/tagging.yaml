@@ -23,6 +23,12 @@ on:
         description: Skip security gate check
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      image_name: ${{ env.IMAGE_NAME }}
+      image_registry: ${{ env.IMAGE_REGISTRY }}
+
   defectdojo:
     uses: opsta/.github/.github/workflows/defectdojo-security-gate.yaml@main
     if: ${{ !inputs.skip-security-gate }}
@@ -33,43 +39,18 @@ jobs:
       defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}
       defectdojo_password: ${{ secrets.DEFECTDOJO_PASSWORD }}
 
-  tag-prd:
-    runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() }}
+  tag:
+    uses: opsta/.github/.github/workflows/tag-and-release.yaml@main
+    if: ${{ !inputs.skip-security-gate }}
     needs:
+      - setup
       - defectdojo
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Get next semver version
-        id: semver
-        uses: anothrNick/github-tag-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DRY_RUN: true
-          DEFAULT_BUMP: ${{ inputs.bump }}
-      - name: Generate job summary version to tag
-        run: |
-          echo "This GitHub Actions is going to tag container image ${{ env.IMAGE_NAME }} from edge to version ${{ steps.semver.outputs.new_tag }}" >> $GITHUB_STEP_SUMMARY
-      - name: Login to Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ inputs.IMAGE_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup Crane
-        uses: imjasonh/setup-crane@v0.4
-      - name: Copy Docker Image from edge to production
-        run: crane copy ${{ env.IMAGE_NAME }}:edge ${{ env.IMAGE_NAME }}:${{ steps.semver.outputs.new_tag }}
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ steps.semver.outputs.new_tag }}" \
-            --repo="${{ github.repository }}" \
-            --title="${{ steps.semver.outputs.new_tag }}" \
-            --generate-notes
+    with:
+      bump: ${{ inputs.bump }}
+      image_name: ${{ needs.setup.outputs.image_name }}
+      image_registry: ${{ needs.setup.outputs.image_registry }}
+      github_repo_name: ${{ github.repository }}
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+      registry_username: ${{ github.actor }}
+      registry_password: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,4 @@
-replicas: 1
+replicas: 2
 containerPort: 5000
 image:
   repository: ghcr.io/opsta/opsta-line-bot

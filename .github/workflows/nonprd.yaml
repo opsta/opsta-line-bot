@@ -71,7 +71,7 @@ jobs:
       helm_chart_version: ${{ env.HELM_CHART_VERSION }}
 
   sec-predeploy:
-    uses: opsta/.github/workflow-templates/security-predeploy.yaml@main
+    uses: opsta/.github/.github/workflows/security-predeploy.yaml@main
     needs:
       - setup
     with:
@@ -116,7 +116,7 @@ jobs:
           DOCKER_BUILD_RECORD_UPLOAD: false
 
   sec-postbuild:
-    uses: opsta/.github/workflow-templates/security-postbuild.yaml@main
+    uses: opsta/.github/.github/workflows/security-postbuild.yaml@main
     needs:
       - setup
       - build-push
@@ -168,7 +168,7 @@ jobs:
             ${{ env.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}
 
   sec-postdeploy:
-    uses: opsta/.github/workflow-templates/security-postdeploy.yaml@main
+    uses: opsta/.github/.github/workflows/security-postdeploy.yaml@main
     needs:
       - setup
       - gitops-sync

@@ -24,7 +24,7 @@ on:
 
 jobs:
   defectdojo:
-    uses: opsta/.github/workflow-templates/defectdojo-security-gate.yaml@main
+    uses: opsta/.github/.github/workflows/defectdojo-security-gate.yaml@main
     if: ${{ !inputs.skip-security-gate }}
     with:
       defectdojo_product_name: ${{ github.event.repository.name }}

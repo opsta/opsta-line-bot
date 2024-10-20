@@ -36,7 +36,7 @@ jobs:
     outputs:
       image_tag: ${{ env.DEPLOY_VERSION }}
       helm_values_file: "${{ vars.HELM_VALUES_PATH }}/${{ vars.PREFIX_IAC_FILENAME }}-prd.yaml"
-      argocd_app_name: ${{ vars.PREFIX_K8S_NAMESPACE }}-${{ env.DEPLOY_ENV }}/${{ vars.PREFIX_IAC_FILENAME }}-${{ env.DEPLOY_ENV }}
+      argocd_app_name: ${{ vars.PREFIX_K8S_NAMESPACE }}-prd/${{ vars.PREFIX_IAC_FILENAME }}-prd
 
   gitops-argocd:
     uses: opsta/.github/.github/workflows/gitops-argocd.yaml@main

@@ -101,7 +101,22 @@ jobs:
             --application="${{ inputs.github_repo_name }}" \
             --release="${{ inputs.image_tag }}" \
             --output="${{ inputs.sonarqube_report_filename }}" \
-            --branch="${{ inputs.branch }}"
+            --branch="${{ inputs.branch }}" \
+            > $SONAR_REPORT_OUTPUT_FILENAME
+      - name: Publish Sonar Report Output to Summary
+        if: always()
+        run: |
+          if [[ -s $SONAR_REPORT_OUTPUT_FILENAME ]]; then
+            {
+              echo "### Sonar Report Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat $SONAR_REPORT_OUTPUT_FILENAME
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Upload Sonar Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -109,6 +124,8 @@ jobs:
           name: sonar-report
           path: ${{ inputs.sonarqube_report_filename }}
           retention-days: ${{ inputs.report_retention_days }}
+    env:
+      SONAR_REPORT_OUTPUT_FILENAME: sonar-report.txt
 
   trivy-sca-report:
     runs-on: ubuntu-latest

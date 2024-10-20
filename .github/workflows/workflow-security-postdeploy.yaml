@@ -93,6 +93,11 @@ on:
         required: true
         type: string
         description: DefectDojo product name
+      defectdojo_product_type:
+        required: false
+        type: string
+        default: Research and Development
+        description: DefectDojo product type
     secrets:
       defectdojo_host:
         required: true
@@ -219,14 +224,14 @@ jobs:
       - name: Import Security Test Report into DefectDojo
         uses: portswigger-cloud/defectdojo-import-scan@v1
         with:
-          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
-          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
-          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
-          defectdojo-product-type: Research and Development
-          defectdojo-product: ${{ github.event.repository.name }}
-          defectdojo-environment-type: ${{ needs.setup.outputs.deploy_env }}
+          defectdojo-url: ${{ secrets.defectdojo_host }}
+          defectdojo-username: ${{ secrets.defectdojo_username }}
+          defectdojo-password: ${{ secrets.defectdojo_password }}
+          defectdojo-product-type: ${{ inputs.defectdojo_product_type }}
+          defectdojo-product: ${{ inputs.defectdojo_product_name }}
+          defectdojo-environment-type: ${{ inputs.deploy_env }}
           defectdojo-scan-type: ${{ matrix.defectdojo_scan_type }}
-          defectdojo-engagement-name: ${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}
+          defectdojo-engagement-name: ${{ inputs.defectdojo_engagement_name }}
           scan-results-file-name: ${{ matrix.defectdojo_report_file }}
     strategy:
       matrix:

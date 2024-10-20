@@ -40,6 +40,5 @@ jobs:
       image_registry: ${{ vars.IMAGE_REGISTRY }}
       github_repo_name: ${{ github.repository }}
     secrets:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}

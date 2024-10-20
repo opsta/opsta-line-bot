@@ -1,7 +1,9 @@
 name: 1. Non-production deployment
 
 env:
-  IMAGE_NAME: ghcr.io/opsta/opsta-linebot
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  # Environment name for main/master branch eg. dev or uat
+  MAIN_BRANCH_ENV_NAME: dev
 
 on:
   push:
@@ -26,9 +28,11 @@ jobs:
         run: |
           if [[ ${{ github.ref_name }} == 'main' || ${{ github.ref_name }} == 'master' ]]; then
             # You can change this to uat for main/master branch in case of you have more than dev and production environment
-            echo "DEPLOY_ENV=dev" >> "$GITHUB_ENV"
+            echo "DEPLOY_ENV=${{ env.MAIN_BRANCH_ENV_NAME }}" >> "$GITHUB_ENV"
+            echo "DEPLOY_URL=https://demo-linebot.${{ env.MAIN_BRANCH_ENV_NAME }}.opsta.dev" >> "$GITHUB_ENV"
           else
             echo "DEPLOY_ENV=${{ github.ref_name }}" >> "$GITHUB_ENV"
+            echo "DEPLOY_URL=https://demo-linebot.${{ github.ref_name }}.opsta.dev" >> "$GITHUB_ENV"
           fi
       - name: Docker meta
         id: meta
@@ -48,151 +52,23 @@ jobs:
     outputs:
       tags: "${{ steps.meta.outputs.tags }}"
       labels: "${{ steps.meta.outputs.labels }}"
-      version: "${{ steps.meta.outputs.version }}"
+      image_tag: "${{ steps.meta.outputs.version }}"
       deploy_env: "${{ env.DEPLOY_ENV }}"
+      deploy_url: "${{ env.DEPLOY_URL }}"
 
-  sonarqube:
-    runs-on: ubuntu-latest
+  call-security-predeploy-workflow:
+    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-predeloy.yaml@main
     needs:
       - setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          # Disabling shallow clones is recommended for improving the relevancy of reporting
-          fetch-depth: 0
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v3
-        with:
-          args: >
-            -D sonar.organization=${{ secrets.SONARQUBE_ORG }}
-            -D sonar.projectKey=${{ github.event.repository.name }}
-            -D sonar.sources=.
-            -D sonar.qualitygate.wait=true
-            -D sonar.python.version=3.12
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONARQUBE_HOST }}
-      - name: Create SonarQube Report for DefectDojo
-        if: always()
-        run: |
-          # Install Sonar Report
-          mkdir -p ~/.local/bin
-          npm config set prefix '~/.local/'
-          npm install --global sonar-report@3.1.6
-
-          # Always run SAST Report from SonarQube
-          export PATH=~/.local/bin/:$PATH
-          # On SonarQube Community edition, you only can use main branch
-          sonar-report \
-            --sonarorganization="${{ secrets.SONARQUBE_ORG }}" \
-            --sonarurl="${{ secrets.SONARQUBE_HOST }}" \
-            --sonartoken="${{ secrets.SONARQUBE_TOKEN }}" \
-            --sonarcomponent="${{ github.event.repository.name }}" \
-            --project="${{ github.event.repository.name }}" \
-            --application="${{ github.event.repository.name }}" \
-            --release="${{ needs.setup.outputs.version }}" \
-            --output="sonar-report.html" \
-            --branch="main"
-      - name: Upload Sonar Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonar-report
-          path: sonar-report.html
-          retention-days: 1
-
-  trivy-sca-report:
-    runs-on: ubuntu-latest
-    needs:
-      - setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Generate Trivy SCA Vulnerability Report
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: "fs"
-          scan-ref: .
-          scanners: 'vuln,license'
-          format: json
-          output: trivy-sca-report.json
-      - name: Upload Trivy SCA Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-sca-report
-          path: trivy-sca-report.json
-          retention-days: 1
-
-  trivy-sca-security-gate:
-    runs-on: ubuntu-latest
-    needs:
-      - setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Trivy SCA Vulnerability Fail Gate
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: "fs"
-          scan-ref: .
-          scanners: 'vuln,license'
-          severity: 'MEDIUM,HIGH,CRITICAL'
-          format: table
-          exit-code: 1
-
-  trivy-iac-report:
-    runs-on: ubuntu-latest
-    needs:
-      - setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-      - name: Generate Kubernetes Manifest files with Helm Template
-        run: |
-          helm template -f iac/helm-values/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}.yaml \
-            ${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
-            > iac/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}-manifest.yaml
-      - name: Generate Trivy IaC Vulnerability Report
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: "fs"
-          scan-ref: .
-          scanners: 'misconfig,secret'
-          format: json
-          output: trivy-iac-report.json
-      - name: Upload Trivy IaC Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-iac-report
-          path: trivy-iac-report.json
-          retention-days: 1
-
-  trivy-iac-security-gate:
-    runs-on: ubuntu-latest
-    needs:
-      - setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-      - name: Generate Kubernetes Manifest files with Helm Template
-        run: |
-          helm template -f iac/helm-values/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}.yaml \
-            ${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
-            > iac/${{ github.event.repository.name }}-${{ needs.setup.outputs.deploy_env }}-manifest.yaml
-      - name: Trivy IaC Vulnerability Fail Gate
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: "fs"
-          scan-ref: .
-          scanners: 'misconfig,secret'
-          severity: 'MEDIUM,HIGH,CRITICAL'
-          format: table
-          exit-code: 1
+    with:
+      github_repo_name: ${{ github.event.repository.name }}
+      image_tag: ${{ needs.setup.outputs.image_tag }}
+      deploy_env: ${{ needs.setup.outputs.deploy_env }}
+      sonarqube_args: -D sonar.python.version=3.12
+    secrets:
+      sonarqube_org: ${{ secrets.SONARQUBE_ORG }}
+      sonarqube_host: ${{ secrets.SONARQUBE_HOST }}
+      sonarqube_token: ${{ secrets.SONARQUBE_TOKEN }}
 
   build-push:
     runs-on: ubuntu-latest
@@ -222,43 +98,16 @@ jobs:
         env:
           DOCKER_BUILD_RECORD_UPLOAD: false
 
-  trivy-image-report:
-    runs-on: ubuntu-latest
+  call-security-postbuild-workflow:
+    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-postbuild.yaml@main
     needs:
       - setup
       - build-push
-    steps:
-      - name: Generate Trivy Image Vulnerability Report
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}"
-          scanners: 'vuln,misconfig,secret'
-          format: json
-          output: trivy-image-report.json
-        env:
-          TRIVY_USERNAME: ${{ github.actor }}
-          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload Trivy Image Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-image-report
-          path: trivy-image-report.json
-          retention-days: 1
-
-  trivy-image-security-gate:
-    runs-on: ubuntu-latest
-    needs:
-      - setup
-      - build-push
-    steps:
-      - name: Trivy Image Vulnerability Fail Gate
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.version }}"
-          scanners: 'vuln,misconfig,secret'
-          severity: 'HIGH,CRITICAL'
-          format: table
-          exit-code: 1
+    with:
+      image_name: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.image_tag }}"
+    secrets:
+      registry_username: ${{ github.actor }}
+      registry_password: ${{ secrets.GITHUB_TOKEN }}
 
   # Commit to Git for ArgoCD
   gitops-commit:
@@ -276,9 +125,9 @@ jobs:
         with:
           valueFile: "iac/helm-values/opsta-line-bot-${{ needs.setup.outputs.deploy_env }}.yaml"
           propertyPath: image.tag
-          value: ${{ needs.setup.outputs.version }}
+          value: ${{ needs.setup.outputs.image_tag }}
           branch: main
-          message: "Update Image Version to ${{ needs.setup.outputs.version }}"
+          message: "Update Image Version to ${{ needs.setup.outputs.image_tag }}"
 
   # ArgoCD Sync
   gitops-sync:
@@ -299,160 +148,18 @@ jobs:
           argocd app sync demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --project demo
           argocd app wait demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --health
 
-  zap-baseline:
-    runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() }}
+  call-security-postdeploy-workflow:
+    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-postdeploy.yaml@main
     needs:
       - setup
       - gitops-sync
-    steps:
-      - name: ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.13.0
-        with:
-          target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
-          allow_issue_writing: false
-          artifact_name: zap-baseline-scan
-          cmd_options: "-I -x zap-baseline-report.xml"
-          fail_action: true
-      - name: Upload ZAP Baseline Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-baseline-report
-          path: zap-baseline-report.xml
-          retention-days: 1
-
-  zap-api:
-    runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() }}
-    needs:
-      - setup
-      - gitops-sync
-    steps:
-      - name: ZAP API Scan
-        uses: zaproxy/action-api-scan@v0.8.0
-        with:
-          target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
-          allow_issue_writing: false
-          artifact_name: zap-api-scan
-          cmd_options: "-I -x zap-api-report.xml"
-          fail_action: true
-      - name: Upload ZAP API Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-api-report
-          path: zap-api-report.xml
-          retention-days: 1
-
-  zap-full:
-    runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !failure() }}
-    needs:
-      - setup
-      - gitops-sync
-    steps:
-      - name: ZAP Full Scan
-        uses: zaproxy/action-full-scan@v0.11.0
-        with:
-          target: "https://demo-linebot.${{ needs.setup.outputs.deploy_env }}.opsta.dev"
-          allow_issue_writing: false
-          artifact_name: zap-full-scan
-          cmd_options: "-I -x zap-full-report.xml"
-          fail_action: true
-      - name: Upload ZAP Full Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-full-report
-          path: zap-full-report.xml
-          retention-days: 1
-
-  defectdojo-import:
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - setup
-      - sonarqube
-      - trivy-sca-report
-      - trivy-iac-report
-      - trivy-image-report
-      - zap-baseline
-      - zap-api
-      - zap-full
-    steps:
-      - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-      - name: Import Security Test Report into DefectDojo
-        uses: portswigger-cloud/defectdojo-import-scan@v1
-        with:
-          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
-          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
-          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
-          defectdojo-product-type: Research and Development
-          defectdojo-product: ${{ github.event.repository.name }}
-          defectdojo-environment-type: ${{ needs.setup.outputs.deploy_env }}
-          defectdojo-scan-type: ${{ matrix.defectdojo_scan_type }}
-          defectdojo-engagement-name: ${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}
-          scan-results-file-name: ${{ matrix.defectdojo_report_file }}
-    strategy:
-      matrix:
-        include:
-          - defectdojo_report_file: sonar-report.html
-            defectdojo_scan_type: SonarQube Scan
-            defectdojo_test_title: SonarQube Scan
-          - defectdojo_report_file: trivy-sca-report.json
-            defectdojo_scan_type: Trivy Scan
-            defectdojo_test_title: Trivy SCA Scan
-          - defectdojo_report_file: trivy-iac-report.json
-            defectdojo_scan_type: Trivy Scan
-            defectdojo_test_title: Trivy IaC Scan
-          - defectdojo_report_file: trivy-image-report.json
-            defectdojo_scan_type: Trivy Scan
-            defectdojo_test_title: Trivy Image Scan
-          - defectdojo_report_file: zap-baseline-report.xml
-            defectdojo_scan_type: ZAP Scan
-            defectdojo_test_title: ZAP Scan Baseline
-          - defectdojo_report_file: zap-api-report.xml
-            defectdojo_scan_type: ZAP Scan
-            defectdojo_test_title: ZAP Scan API
-          - defectdojo_report_file: zap-full-report.xml
-            defectdojo_scan_type: ZAP Scan
-            defectdojo_test_title: ZAP Scan Full
-
-  defectdojo-findings:
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - defectdojo-import
-    steps:
-      - name: DefectDojo Query Findings
-        uses: portswigger-cloud/defectdojo-active-findings@v1
-        with:
-          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
-          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
-          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
-          defectdojo-product: ${{ github.event.repository.name }}
-
-  defectdojo-security-gate:
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - defectdojo-import
-    steps:
-      - name: DefectDojo Security Gate Thresholds
-        uses: portswigger-cloud/defectdojo-findings-thresholds@v1
-        with:
-          defectdojo-url: ${{ secrets.DEFECTDOJO_HOST }}
-          defectdojo-username: ${{ secrets.DEFECTDOJO_USERNAME }}
-          defectdojo-password: ${{ secrets.DEFECTDOJO_PASSWORD }}
-          defectdojo-product: ${{ github.event.repository.name }}
-          # Need to put every thresholds to make it working
-          total-threshold: 1000000
-          critical-threshold: 0
-          high-threshold: 0
-          medium-threshold: 1000000
-          low-threshold: 1000000
-          info-threshold: 1000000
+    with:
+      github_repo_name: ${{ github.event.repository.name }}
+      zap_target: ${{ needs.setup.outputs.deploy_url }}
+      deploy_env: ${{ needs.setup.outputs.deploy_env }}
+      defectdojo_product_name: ${{ github.event.repository.name }}
+      defectdojo_engagement_name: ${{ needs.setup.outputs.deploy_env }}-${{ github.run_id }}
+    secrets:
+      defectdojo_host: ${{ secrets.DEFECTDOJO_HOST }}
+      defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}
+      defectdojo_password: ${{ secrets.DEFECTDOJO_PASSWORD }}

@@ -1,0 +1,231 @@
+name: Reusable security pre-deploy workflow
+
+on:
+  workflow_call:
+    inputs:
+      github_repo_name:
+        required: true
+        type: string
+        description: GitHub Repository Name
+      image_tag:
+        required: true
+        type: string
+        description: Container image tag
+      deploy_env:
+        required: true
+        type: string
+        description: Environment such as dev, uat, prd
+      branch:
+        required: true
+        type: string
+        default: main
+        description: Branch name
+      sonarqube_sources:
+        required: true
+        type: string
+        default: .
+        description: The analysis baseline for main source code (non-test code) in the project
+      sonarqube_args:
+        required: false
+        type: string
+        description: Custom SonarQube arguments eg. -D sonar.python.version=3.12
+      sonarqube_report_filename:
+        required: true
+        type: string
+        default: sonar-report.html
+        description: SonarQube report file name
+      trivy_sca_report_filename:
+        required: true
+        type: string
+        default: trivy-sca-report.json
+        description: Trivy SCA report file name
+      trivy_iac_report_filename:
+        required: true
+        type: string
+        default: trivy-iac-report.json
+        description: Trivy IaC report file name
+      report_retention_days:
+        required: true
+        type: number
+        default: 1
+        description: Report files retention days
+    secrets:
+      sonarqube_org:
+        required: true
+        description: SonarQube organization name
+      sonarqube_host:
+        required: true
+        description: SonarQube host eg. https://sonarcloud.io
+      sonarqube_token:
+        required: true
+        description: SonarQube token
+
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Disabling shallow clones is recommended for improving the relevancy of reporting
+          fetch-depth: 0
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v3
+        with:
+          args: >
+            -D sonar.organization=${{ secrets.sonarqube_org }}
+            -D sonar.projectKey=${{ inputs.github_repo_name }}
+            -D sonar.sources=${{ inputs.sonarqube_sources }}
+            -D sonar.qualitygate.wait=true
+            ${{ inputs.sonarqube_args }}
+        env:
+          SONAR_TOKEN: ${{ secrets.sonarqube_token }}
+          SONAR_HOST_URL: ${{ secrets.sonarqube_host }}
+      - name: Create SonarQube Report for DefectDojo
+        if: always()
+        run: |
+          # Install Sonar Report
+          mkdir -p ~/.local/bin
+          npm config set prefix '~/.local/'
+          npm install --global sonar-report@3.1.6
+
+          # Always run SAST Report from SonarQube
+          export PATH=~/.local/bin/:$PATH
+          # On SonarQube Community edition, you only can use main branch
+          sonar-report \
+            --sonarorganization="${{ secrets.sonarqube_org }}" \
+            --sonarurl="${{ secrets.sonarqube_host }}" \
+            --sonartoken="${{ secrets.sonarqube_token }}" \
+            --sonarcomponent="${{ inputs.github_repo_name }}" \
+            --project="${{ inputs.github_repo_name }}" \
+            --application="${{ inputs.github_repo_name }}" \
+            --release="${{ inputs.image_tag }}" \
+            --output="${{ inputs.sonarqube_report_filename }}" \
+            --branch="${{ inputs.branch }}"
+      - name: Upload Sonar Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-report
+          path: ${{ inputs.sonarqube_report_filename }}
+          retention-days: ${{ inputs.report_retention_days }}
+
+  trivy-sca-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate Trivy SCA Vulnerability Report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'vuln,license'
+          format: json
+          output: ${{ inputs.trivy_sca_report_filename }}
+      - name: Upload Trivy SCA Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sca-report
+          path: ${{ inputs.trivy_sca_report_filename }}
+          retention-days: ${{ inputs.report_retention_days }}
+
+  trivy-sca-security-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Trivy SCA Vulnerability Fail Gate
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'vuln,license'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          format: table
+          hide-progress: true
+          output: ${{ env.TRIVY_SCA_OUTPUT_FILENAME }}
+          exit-code: 1
+      - name: Publish Trivy SCA Output to Summary
+        if: always()
+        run: |
+          if [[ -s $TRIVY_SCA_OUTPUT_FILENAME ]]; then
+            {
+              echo "### Trivy SCA Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat $TRIVY_SCA_OUTPUT_FILENAME
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+    env:
+      TRIVY_SCA_OUTPUT_FILENAME: trivy-sca-report.txt
+
+  trivy-iac-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Generate Kubernetes Manifest files with Helm Template
+        run: |
+          helm template -f iac/helm-values/${{ inputs.github_repo_name }}-${{ inputs.deploy_env }}.yaml \
+            ${{ inputs.github_repo_name }}-${{ inputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
+            > iac/${{ inputs.github_repo_name }}-${{ inputs.deploy_env }}-manifest.yaml
+      - name: Generate Trivy IaC Vulnerability Report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'misconfig,secret'
+          format: json
+          output: ${{ inputs.trivy_iac_report_filename }}
+      - name: Upload Trivy IaC Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-iac-report
+          path: ${{ inputs.trivy_iac_report_filename }}
+          retention-days: ${{ inputs.report_retention_days }}
+
+  trivy-iac-security-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Generate Kubernetes Manifest files with Helm Template
+        run: |
+          helm template -f iac/helm-values/${{ inputs.github_repo_name }}-${{ inputs.deploy_env }}.yaml \
+            ${{ inputs.github_repo_name }}-${{ inputs.deploy_env }} oci://ghcr.io/gimlet-io/onechart --version 0.73.0 \
+            > iac/${{ inputs.github_repo_name }}-${{ inputs.deploy_env }}-manifest.yaml
+      - name: Trivy IaC Vulnerability Fail Gate
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: .
+          scanners: 'misconfig,secret'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          format: table
+          hide-progress: true
+          output: ${{ env.TRIVY_IAC_OUTPUT_FILENAME }}
+          exit-code: 1
+      - name: Publish Trivy IaC Output to Summary
+        if: always()
+        run: |
+          if [[ -s $TRIVY_IAC_OUTPUT_FILENAME ]]; then
+            {
+              echo "### Trivy IaC Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat $TRIVY_IAC_OUTPUT_FILENAME
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+    env:
+      TRIVY_IAC_OUTPUT_FILENAME: trivy-iac-report.txt

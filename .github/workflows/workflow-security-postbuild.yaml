@@ -1,0 +1,77 @@
+name: Reusable security post-build workflow
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        required: true
+        type: string
+        description: Container image name including tag
+      trivy_image_report_filename:
+        required: true
+        type: string
+        default: trivy-image-report.json
+        description: Trivy Image report file name
+      report_retention_days:
+        required: true
+        type: number
+        default: 1
+        description: Report files retention days
+    secrets:
+      registry_username:
+        required: true
+        description: Container registry username
+      registry_password:
+        required: true
+        description: Container registry password
+
+jobs:
+  trivy-image-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Trivy Image Vulnerability Report
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_name }}
+          scanners: 'vuln,misconfig,secret'
+          format: json
+          output: ${{ inputs.trivy_image_report_filename }}
+        env:
+          TRIVY_USERNAME: ${{ secrets.registry_username }}
+          TRIVY_PASSWORD: ${{ secrets.registry_password }}
+      - name: Upload Trivy Image Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: ${{ inputs.trivy_image_report_filename }}
+          retention-days: ${{ inputs.report_retention_days }}
+
+  trivy-image-security-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trivy Image Vulnerability Fail Gate
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_name }}
+          scanners: 'vuln,misconfig,secret'
+          severity: 'HIGH,CRITICAL'
+          format: table
+          hide-progress: true
+          output: ${{ env.TRIVY_IMAGE_OUTPUT_FILENAME }}
+          exit-code: 1
+      - name: Publish Trivy Image Output to Summary
+        if: always()
+        run: |
+          if [[ -s $TRIVY_IMAGE_OUTPUT_FILENAME ]]; then
+            {
+              echo "### Trivy Image Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat $TRIVY_IMAGE_OUTPUT_FILENAME
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+    env:
+      TRIVY_IMAGE_OUTPUT_FILENAME: trivy-image-report.txt

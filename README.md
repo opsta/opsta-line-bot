@@ -63,5 +63,6 @@ securityContext:
   seccompProfile:
     type: RuntimeDefault
   capabilities:
-    drop: ALL
+    drop:
+      - ALL
 ```

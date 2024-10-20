@@ -1,4 +1,5 @@
 replicas: 1
+podDisruptionBudgetEnabled: true
 containerPort: 5000
 image:
   repository: ghcr.io/opsta/opsta-line-bot

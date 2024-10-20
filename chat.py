@@ -115,20 +115,20 @@ def handle_message(event):
 
 
 def init_app():
-  global retriever
+  global retriever, csrf
   app = Flask(__name__, instance_relative_config=False)
+
+  # Enable CSRF
+  csrf = CSRFProtect()
+  csrf.init_app(app)
+  app.config['SECRET_KEY'] = os.urandom(32)
+
   with app.app_context():
     # Load PDF file
     retriever = configure_retriever(pdf_file)
     return app
 
-
 app = init_app()
-
-# Enable CSRF
-csrf = CSRFProtect()
-csrf.init_app(app)
-app.config['SECRET_KEY'] = os.urandom(32)
 
 if __name__ == "__main__":
   app.run()

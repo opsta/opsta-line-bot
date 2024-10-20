@@ -76,6 +76,7 @@ jobs:
       helm_values_file: ${{ needs.setup.outputs.helm_values_file }}
       helm_chart_name: ${{ needs.setup.outputs.helm_chart_name }}
       helm_chart_version: ${{ needs.setup.outputs.helm_chart_version }}
+      helm_release_namespace: ${{ vars.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}
     secrets:
       sonarqube_org: ${{ secrets.SONARQUBE_ORG }}
       sonarqube_host: ${{ secrets.SONARQUBE_HOST }}

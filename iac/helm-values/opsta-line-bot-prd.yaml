@@ -38,3 +38,10 @@ volumes:
     path: /tmp/hub
     size: 500Mi
     storageClass: nfs
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault

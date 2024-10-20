@@ -16,12 +16,12 @@ on:
         type: string
         description: Environment such as dev, uat, prd
       branch:
-        required: true
+        required: false
         type: string
         default: main
         description: Branch name
       sonarqube_sources:
-        required: true
+        required: false
         type: string
         default: .
         description: The analysis baseline for main source code (non-test code) in the project
@@ -30,22 +30,22 @@ on:
         type: string
         description: Custom SonarQube arguments eg. -D sonar.python.version=3.12
       sonarqube_report_filename:
-        required: true
+        required: false
         type: string
         default: sonar-report.html
         description: SonarQube report file name
       trivy_sca_report_filename:
-        required: true
+        required: false
         type: string
         default: trivy-sca-report.json
         description: Trivy SCA report file name
       trivy_iac_report_filename:
-        required: true
+        required: false
         type: string
         default: trivy-iac-report.json
         description: Trivy IaC report file name
       report_retention_days:
-        required: true
+        required: false
         type: number
         default: 1
         description: Report files retention days

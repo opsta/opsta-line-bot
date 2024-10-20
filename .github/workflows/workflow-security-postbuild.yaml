@@ -8,12 +8,12 @@ on:
         type: string
         description: Container image name including tag
       trivy_image_report_filename:
-        required: true
+        required: false
         type: string
         default: trivy-image-report.json
         description: Trivy Image report file name
       report_retention_days:
-        required: true
+        required: false
         type: number
         default: 1
         description: Report files retention days

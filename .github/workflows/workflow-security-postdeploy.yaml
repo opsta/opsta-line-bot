@@ -16,72 +16,72 @@ on:
         type: string
         description: Environment such as dev, uat, prd
       sonarqube_report_filename:
-        required: true
+        required: false
         type: string
         default: sonar-report.html
         description: SonarQube report file name
       trivy_sca_report_filename:
-        required: true
+        required: false
         type: string
         default: trivy-sca-report.json
         description: Trivy SCA report file name
       trivy_iac_report_filename:
-        required: true
+        required: false
         type: string
         default: trivy-iac-report.json
         description: Trivy IaC report file name
       trivy_image_report_filename:
-        required: true
+        required: false
         type: string
         default: trivy-image-report.json
         description: Trivy Image report file name
       zap_baseline_report_filename:
-        required: true
+        required: false
         type: string
         default: zap-baseline-report.xml
         description: ZAP baseline report file name
       zap_api_report_filename:
-        required: true
+        required: false
         type: string
         default: zap-api-report.xml
         description: ZAP API report file name
       zap_full_report_filename:
-        required: true
+        required: false
         type: string
         default: zap-full-report.xml
         description: ZAP full report file name
       report_retention_days:
-        required: true
+        required: false
         type: number
         default: 1
         description: Report files retention days
       defectdojo_threshold_total:
-        required: true
+        required: false
         type: number
         default: 1000000
         description: DefectDojo total findinds threshold
       defectdojo_threshold_critical:
-        required: true
+        required: false
         type: number
         default: 0
         description: DefectDojo critical findinds threshold
       defectdojo_threshold_high:
-        required: true
+        required: false
         type: number
         default: 0
         description: DefectDojo high findinds threshold
       defectdojo_threshold_medium:
-        required: true
+        required: false
         type: number
         default: 1000000
         description: DefectDojo medium findinds threshold
       defectdojo_threshold_low:
-        required: true
+        required: false
         type: number
         default: 1000000
         description: DefectDojo low findinds threshold
       defectdojo_threshold_info:
-        required: true
+        required: false
         type: number
         default: 1000000
         description: DefectDojo info findinds threshold

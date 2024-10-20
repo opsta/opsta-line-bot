@@ -141,7 +141,7 @@ yarl==1.11.1
 zipp==3.20.2
 
 # SECURITY VULNERABILITY
-fastapi==0.114.2
-starlette==0.38.5
-# fastapi==0.115.2
-# starlette==0.40.0
+# fastapi==0.114.2
+# starlette==0.38.5
+fastapi==0.115.2
+starlette==0.40.0

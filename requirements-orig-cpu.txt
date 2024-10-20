@@ -1,5 +1,6 @@
 line-bot-sdk
 Flask
+Flask-WTF
 langchain-community
 langchain-openai
 langchain-huggingface

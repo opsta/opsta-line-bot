@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request, abort
+from flask_wtf.csrf import CSRFProtect
 
 from langchain_openai import ChatOpenAI
 from langchain_huggingface.embeddings.huggingface import HuggingFaceEmbeddings
@@ -29,9 +30,6 @@ from linebot.v3.webhooks import (
   TextMessageContent
 )
 
-app = Flask(__name__)
-
-
 # Declare variables from environment variables
 configuration = Configuration(access_token=os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
@@ -46,7 +44,8 @@ text_splitter_chunk_size = int(os.environ.get('TEXT_SPLITTER_CHUNK_SIZE', '1000'
 text_splitter_chunk_overlap = int(os.environ.get('TEXT_SPLITTER_CHUNK_OVERLAP', '200'))
 search_return_documents = int(os.environ.get('SEARCH_RETURN_DOCUMENTS', '5'))
 # THIS IS DUMMY AWS SECRET KEY FOR SECURITY TESTING
-dummy_aws_secret_key = '4wcTdlSgTZAIoT7JPLduafIE90St95bQffGx3laI'
+dummy_aws_secret_key = ''
+# 4wcTdlSgTZAIoT7JPLduafIE90St95bQffGx3laIEXAMPLEKEY
 
 retriever = None
 system_prompt = (
@@ -126,11 +125,17 @@ def init_app():
 
 app = init_app()
 
+# Enable CSRF
+csrf = CSRFProtect()
+csrf.init_app(app)
+app.config['SECRET_KEY'] = os.urandom(32)
+
 if __name__ == "__main__":
   app.run()
 
 
 @app.route("/callback", methods=['POST'])
+@csrf.exempt
 def callback():
   # get X-Line-Signature header value
   signature = request.headers['X-Line-Signature']

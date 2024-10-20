@@ -57,7 +57,7 @@ jobs:
       deploy_url: "${{ env.DEPLOY_URL }}"
 
   call-security-predeploy-workflow:
-    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-predeloy.yaml@main
+    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-predeploy.yaml@main
     needs:
       - setup
     with:

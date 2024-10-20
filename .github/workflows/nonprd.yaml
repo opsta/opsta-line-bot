@@ -53,6 +53,7 @@ jobs:
       tags: "${{ steps.meta.outputs.tags }}"
       labels: "${{ steps.meta.outputs.labels }}"
       image_tag: "${{ steps.meta.outputs.version }}"
+      image_name: "${{ env.IMAGE_NAME }}"
       deploy_env: "${{ env.DEPLOY_ENV }}"
       deploy_url: "${{ env.DEPLOY_URL }}"
 
@@ -104,7 +105,7 @@ jobs:
       - setup
       - build-push
     with:
-      image_name: "${{ env.IMAGE_NAME }}:${{ needs.setup.outputs.image_tag }}"
+      image_name: "${{ needs.setup.outputs.image_name }}:${{ needs.setup.outputs.image_tag }}"
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}

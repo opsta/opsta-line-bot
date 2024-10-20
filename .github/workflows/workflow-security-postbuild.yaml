@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         description: Container image name including tag
+      trivy_image_severity:
+        required: false
+        type: string
+        default: HIGH,CRITICAL
+        description: Trivy Image severity
       trivy_image_report_filename:
         required: false
         type: string
@@ -54,7 +59,7 @@ jobs:
         with:
           image-ref: ${{ inputs.image_name }}
           scanners: 'vuln,misconfig,secret'
-          severity: 'HIGH,CRITICAL'
+          severity: ${{ inputs.trivy_image_severity }}
           format: table
           hide-progress: true
           output: ${{ env.TRIVY_IMAGE_OUTPUT_FILENAME }}

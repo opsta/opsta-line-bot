@@ -1,9 +1,16 @@
 name: 1. Non-production deployment
 
 env:
+  PREFIX_K8S_NAMESPACE: demo-${{ github.event.repository.name }}
+  PREFIX_IAC_FILENAME: ${{ github.event.repository.name }}
+  ARGOCD_PROJECT: demo
+  HELM_VALUES_PATH: iac/helm-values
+  HELM_CHART_NAME: oci://ghcr.io/gimlet-io/onechart
+  HELM_CHART_VERSION: "0.73.0"
   IMAGE_NAME: ghcr.io/${{ github.repository }}
   # Environment name for main/master branch eg. dev or uat
   MAIN_BRANCH_ENV_NAME: dev
+  SONARQUBE_ARGS: -D sonar.python.version=3.12
 
 on:
   push:
@@ -49,13 +56,18 @@ jobs:
             # dynamically set the branch name as a prefix
             type=sha,prefix=${{ env.DEPLOY_ENV }}-,priority=750
     # For use in other jobs
+    # Need to put a lot of variables here because reusable workflow context not support env.*
     outputs:
-      tags: "${{ steps.meta.outputs.tags }}"
-      labels: "${{ steps.meta.outputs.labels }}"
-      image_tag: "${{ steps.meta.outputs.version }}"
-      image_name: "${{ env.IMAGE_NAME }}"
-      deploy_env: "${{ env.DEPLOY_ENV }}"
-      deploy_url: "${{ env.DEPLOY_URL }}"
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      image_tag: ${{ steps.meta.outputs.version }}
+      image_name: ${{ env.IMAGE_NAME }}
+      deploy_env: ${{ env.DEPLOY_ENV }}
+      deploy_url: ${{ env.DEPLOY_URL }}
+      sonarqube_args: ${{ env.SONARQUBE_ARGS }}
+      helm_values_file: "${{ env.HELM_VALUES_PATH }}/${{ github.event.repository.name }}-${{ env.DEPLOY_ENV }}.yaml"
+      helm_chart_name: ${{ env.HELM_CHART_NAME }}
+      helm_chart_version: ${{ env.HELM_CHART_VERSION }}
 
   sec-predeploy:
     uses: opsta/opsta-line-bot/.github/workflows/workflow-security-predeploy.yaml@main
@@ -65,7 +77,10 @@ jobs:
       github_repo_name: ${{ github.event.repository.name }}
       image_tag: ${{ needs.setup.outputs.image_tag }}
       deploy_env: ${{ needs.setup.outputs.deploy_env }}
-      sonarqube_args: -D sonar.python.version=3.12
+      sonarqube_args: ${{ needs.setup.outputs.sonarqube_args }}
+      helm_values_file: ${{ needs.setup.outputs.helm_values_file }}
+      helm_chart_name: ${{ needs.setup.outputs.helm_chart_name }}
+      helm_chart_version: ${{ needs.setup.outputs.helm_chart_version }}
     secrets:
       sonarqube_org: ${{ secrets.SONARQUBE_ORG }}
       sonarqube_host: ${{ secrets.SONARQUBE_HOST }}
@@ -78,7 +93,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Login to Docker Hub
+      - name: Login to Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
@@ -124,7 +139,7 @@ jobs:
       - name: Update Image Version in Helm Value file
         uses: fjogeleit/yaml-update-action@main
         with:
-          valueFile: "iac/helm-values/opsta-line-bot-${{ needs.setup.outputs.deploy_env }}.yaml"
+          valueFile: "${{ env.HELM_VALUES_PATH }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}.yaml"
           propertyPath: image.tag
           value: ${{ needs.setup.outputs.image_tag }}
           branch: main
@@ -146,8 +161,10 @@ jobs:
     steps:
       - name: Sync ArgoCD
         run: |
-          argocd app sync demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --project demo
-          argocd app wait demo-opsta-line-bot-${{ needs.setup.outputs.deploy_env }}/opsta-line-bot-${{ needs.setup.outputs.deploy_env }} --health
+          argocd app sync --project ${{ env.ARGOCD_PROJECT }} \
+            ${{ env.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}
+          argocd app wait --health \
+            ${{ env.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}
 
   sec-postdeploy:
     uses: opsta/opsta-line-bot/.github/workflows/workflow-security-postdeploy.yaml@main

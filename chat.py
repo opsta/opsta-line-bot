@@ -121,7 +121,7 @@ def init_app():
   # Enable CSRF
   csrf = CSRFProtect()
   csrf.init_app(app)
-  app.config['SECRET_KEY'] = '%s' % (os.environ.get('FLASK_SECRET_KEY', os.urandom(32)))
+  app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', os.urandom(32))
 
   with app.app_context():
     # Load PDF file

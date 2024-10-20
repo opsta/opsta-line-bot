@@ -7,6 +7,7 @@ env:
   HELM_VALUES_PATH: iac/helm-values
   HELM_CHART_NAME: oci://ghcr.io/gimlet-io/onechart
   HELM_CHART_VERSION: "0.73.0"
+  IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME: ghcr.io/${{ github.repository }}
   # Environment name for main/master branch eg. dev or uat
   MAIN_BRANCH_ENV_NAME: dev
@@ -70,7 +71,7 @@ jobs:
       helm_chart_version: ${{ env.HELM_CHART_VERSION }}
 
   sec-predeploy:
-    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-predeploy.yaml@main
+    uses: opsta/.github/workflow-templates/security-predeploy.yaml@main
     needs:
       - setup
     with:
@@ -97,7 +98,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Docker Buildx
@@ -115,7 +116,7 @@ jobs:
           DOCKER_BUILD_RECORD_UPLOAD: false
 
   sec-postbuild:
-    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-postbuild.yaml@main
+    uses: opsta/.github/workflow-templates/security-postbuild.yaml@main
     needs:
       - setup
       - build-push
@@ -167,7 +168,7 @@ jobs:
             ${{ env.PREFIX_K8S_NAMESPACE }}-${{ needs.setup.outputs.deploy_env }}/${{ env.PREFIX_IAC_FILENAME }}-${{ needs.setup.outputs.deploy_env }}
 
   sec-postdeploy:
-    uses: opsta/opsta-line-bot/.github/workflows/workflow-security-postdeploy.yaml@main
+    uses: opsta/.github/workflow-templates/security-postdeploy.yaml@main
     needs:
       - setup
       - gitops-sync

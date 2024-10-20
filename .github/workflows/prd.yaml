@@ -2,7 +2,7 @@ name: 3. Production deployment
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_NAME: opsta/opsta-linebot
+  IMAGE_NAME: ${{ github.repository }}
 
 on:
   workflow_dispatch:

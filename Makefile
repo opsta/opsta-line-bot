@@ -1,6 +1,10 @@
 VENV = default
+PORT = 5000
 
 all: install run
+
+mac:
+	make install-cpu run PORT=5001
 
 venv:
 	test -d .venv/${VENV} || python -m venv .venv/${VENV}
@@ -13,7 +17,7 @@ install-cpu: venv
 
 run:
 	export $(xargs <.env)
-	. .venv/${VENV}/bin/activate && flask --app chat run --host 0.0.0.0 --port 5000
+	. .venv/${VENV}/bin/activate && flask --app chat run --host 0.0.0.0 --port ${PORT}
 
 deploy:
 	kubectl create namespace demo || true

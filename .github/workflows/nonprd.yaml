@@ -65,22 +65,22 @@ jobs:
       argocd_app_name: ${{ vars.PREFIX_K8S_NAMESPACE }}-${{ env.DEPLOY_ENV }}/${{ vars.PREFIX_IAC_FILENAME }}-${{ env.DEPLOY_ENV }}
 
   # SECURITY PIPELINE
-  sec-predeploy:
-    uses: opsta/.github/.github/workflows/security-predeploy.yaml@main
-    needs:
-      - setup
-    with:
-      github_repo_name: ${{ github.event.repository.name }}
-      image_tag: ${{ needs.setup.outputs.image_tag }}
-      deploy_env: ${{ needs.setup.outputs.deploy_env }}
-      sonarqube_args: ${{ needs.setup.outputs.sonarqube_args }}
-      helm_values_file: ${{ needs.setup.outputs.helm_values_file }}
-      helm_chart_name: ${{ needs.setup.outputs.helm_chart_name }}
-      helm_chart_version: ${{ needs.setup.outputs.helm_chart_version }}
-    secrets:
-      sonarqube_org: ${{ secrets.SONARQUBE_ORG }}
-      sonarqube_host: ${{ secrets.SONARQUBE_HOST }}
-      sonarqube_token: ${{ secrets.SONARQUBE_TOKEN }}
+  # sec-predeploy:
+  #   uses: opsta/.github/.github/workflows/security-predeploy.yaml@main
+  #   needs:
+  #     - setup
+  #   with:
+  #     github_repo_name: ${{ github.event.repository.name }}
+  #     image_tag: ${{ needs.setup.outputs.image_tag }}
+  #     deploy_env: ${{ needs.setup.outputs.deploy_env }}
+  #     sonarqube_args: ${{ needs.setup.outputs.sonarqube_args }}
+  #     helm_values_file: ${{ needs.setup.outputs.helm_values_file }}
+  #     helm_chart_name: ${{ needs.setup.outputs.helm_chart_name }}
+  #     helm_chart_version: ${{ needs.setup.outputs.helm_chart_version }}
+  #   secrets:
+  #     sonarqube_org: ${{ secrets.SONARQUBE_ORG }}
+  #     sonarqube_host: ${{ secrets.SONARQUBE_HOST }}
+  #     sonarqube_token: ${{ secrets.SONARQUBE_TOKEN }}
 
   build-push:
     runs-on: ubuntu-latest
@@ -106,24 +106,24 @@ jobs:
           tags: ${{ needs.setup.outputs.tags }}
           labels: ${{ needs.setup.outputs.labels }}
           # SECURITY VULNERABILITY
-          # cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln,mode=max
-          # cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln
-          cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache,mode=max
-          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln,mode=max
+          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln
+          # cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache,mode=max
+          # cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache
         env:
           DOCKER_BUILD_RECORD_UPLOAD: false
 
   # SECURITY PIPELINE
-  sec-postbuild:
-    uses: opsta/.github/.github/workflows/security-postbuild.yaml@main
-    needs:
-      - setup
-      - build-push
-    with:
-      image_name: "${{ vars.IMAGE_NAME }}:${{ needs.setup.outputs.image_tag }}"
-    secrets:
-      registry_username: ${{ github.actor }}
-      registry_password: ${{ secrets.GITHUB_TOKEN }}
+  # sec-postbuild:
+  #   uses: opsta/.github/.github/workflows/security-postbuild.yaml@main
+  #   needs:
+  #     - setup
+  #     - build-push
+  #   with:
+  #     image_name: "${{ vars.IMAGE_NAME }}:${{ needs.setup.outputs.image_tag }}"
+  #   secrets:
+  #     registry_username: ${{ github.actor }}
+  #     registry_password: ${{ secrets.GITHUB_TOKEN }}
 
   gitops-argocd:
     uses: opsta/.github/.github/workflows/gitops-argocd.yaml@main
@@ -143,17 +143,17 @@ jobs:
       argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN }}
 
   # SECURITY PIPELINE
-  sec-postdeploy:
-    uses: opsta/.github/.github/workflows/security-postdeploy.yaml@main
-    needs:
-      - setup
-      - gitops-argocd
-    with:
-      github_repo_name: ${{ github.event.repository.name }}
-      zap_target: ${{ needs.setup.outputs.deploy_url }}
-      deploy_env: ${{ needs.setup.outputs.deploy_env }}
-      defectdojo_product_name: ${{ github.event.repository.name }}
-    secrets:
-      defectdojo_host: ${{ secrets.DEFECTDOJO_HOST }}
-      defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}
-      defectdojo_password: ${{ secrets.DEFECTDOJO_PASSWORD }}
+  # sec-postdeploy:
+  #   uses: opsta/.github/.github/workflows/security-postdeploy.yaml@main
+  #   needs:
+  #     - setup
+  #     - gitops-argocd
+  #   with:
+  #     github_repo_name: ${{ github.event.repository.name }}
+  #     zap_target: ${{ needs.setup.outputs.deploy_url }}
+  #     deploy_env: ${{ needs.setup.outputs.deploy_env }}
+  #     defectdojo_product_name: ${{ github.event.repository.name }}
+  #   secrets:
+  #     defectdojo_host: ${{ secrets.DEFECTDOJO_HOST }}
+  #     defectdojo_username: ${{ secrets.DEFECTDOJO_USERNAME }}
+  #     defectdojo_password: ${{ secrets.DEFECTDOJO_PASSWORD }}

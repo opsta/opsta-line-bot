@@ -106,10 +106,10 @@ jobs:
           tags: ${{ needs.setup.outputs.tags }}
           labels: ${{ needs.setup.outputs.labels }}
           # SECURITY VULNERABILITY
-          cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln,mode=max
-          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln
-          # cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache,mode=max
-          # cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache
+          # cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln,mode=max
+          # cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache-vuln
+          cache-to: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ vars.IMAGE_NAME }}:buildcache
         env:
           DOCKER_BUILD_RECORD_UPLOAD: false
 

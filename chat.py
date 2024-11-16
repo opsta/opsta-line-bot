@@ -156,4 +156,4 @@ def callback():
 
 @app.route('/health')
 def health():
-  return 'OK'
+  return 'OK!'

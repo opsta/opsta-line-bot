@@ -17,8 +17,8 @@ ingress:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 vars:
   HF_HOME: /tmp
-  HF_HUB_OFFLINE: 1
-  HF_DATASETS_OFFLINE: 1
+  HF_HUB_OFFLINE: 0
+  HF_DATASETS_OFFLINE: 0
   ANSWER_LANGUAGE: Thai
   TEXT_SPLITTER_CHUNK_SIZE: 1000
   TEXT_SPLITTER_CHUNK_OVERLAP: 200

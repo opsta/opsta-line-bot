@@ -17,7 +17,7 @@
     "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {},
     "ghcr.io/stuartleeks/dev-container-features/shell-history:0": {},
     "ghcr.io/jungaretti/features/make:1": {},
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:2": {},
     "ghcr.io/audacioustux/devcontainers/argo:1": {},
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {
       "installGkeGcloudAuthPlugin": true,
